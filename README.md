@@ -16,11 +16,11 @@ This project will demonstrate how similar training techniques can be used to tra
 
 The AR.Drone Autonomy ROS Node defers complex stability control functions to the Parrot firmware and exposes simplified navigation operations via the ROS interface.  Navigation operations include:
 
-Takeoff / land / emergency
-Translate forward / backward
-Translate left / right
-Ascend / descend
-Rotate clockwise / counter clockwise
+* Takeoff / land / emergency
+* Translate forward / backward
+* Translate left / right
+* Ascend / descend
+* Rotate clockwise / counter clockwise
 
 <!-- The AR.Drone Autonomy ROS Node is also capable of publishing high-resolution camera snapshots and 640x480 resolution H.264 via the ROS interface.-->
 
