@@ -1,0 +1,13 @@
+<launch>
+  <arg name="path" default="/home/courtney/ros/data" />
+  <arg name="bag" default="test.bag" />
+
+  <node name="image_view" type="image_view" pkg="image_view">
+    <param name="autosize" value="true" />
+    <param name="image_transport" value="compressed" />
+    <remap from="image" to="/bebop/image_raw_throttle"/>
+  </node>
+
+
+  <node pkg="rosbag" type="play" name="player" args="$(arg path)/$(arg bag)" />
+</launch>
