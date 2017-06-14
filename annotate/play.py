@@ -1,13 +1,13 @@
 # annotate.py
 #
-# import pandas as pd
-# import rosbag_pandas
-# from PIL import Image, ImageDraw
+import pandas as pd
+import rosbag_pandas
+from PIL import Image, ImageDraw
 from io import BytesIO
 #import numpy as np
 import argparse, sys, pdb
 
-#from ImageWindow import ImageWindow
+from ImageWindow import ImageWindow
 from shared.Action import Action
 
 
@@ -55,7 +55,7 @@ class Annotator:
                 i += 1
 
 def get_args():
-    parser = argparse.ArgumentParser(description='Play back drone flight images with associated action commands.', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(description='Play back drone flight images with associated action commands.  NOTE: Python 2 required.', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('infile', metavar='in_npzfile', help='npz file to play back')
 
     return parser.parse_args()
