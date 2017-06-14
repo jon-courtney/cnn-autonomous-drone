@@ -8,7 +8,7 @@ from io import BytesIO
 import argparse, sys, pdb
 
 #from ImageWindow import ImageWindow
-from shared.Action import Action
+from shared.action import Action
 from base import AnnotateBase
 
 class Annotator(AnnotateBase):

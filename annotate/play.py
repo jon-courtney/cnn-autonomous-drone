@@ -8,7 +8,7 @@ import numpy as np
 import argparse, sys, pdb
 
 from ImageWindow import ImageWindow
-from shared.Action import Action
+from shared.action import Action
 from base import AnnotateBase
 
 
