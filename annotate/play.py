@@ -4,7 +4,7 @@ import pandas as pd
 import rosbag_pandas
 from PIL import Image, ImageDraw
 from io import BytesIO
-#import numpy as np
+import numpy as np
 import argparse, sys, pdb
 
 from ImageWindow import ImageWindow
