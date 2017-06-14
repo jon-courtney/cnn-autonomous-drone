@@ -1,6 +1,6 @@
-# Capstone Proposal: Autonomous Drone Navigation
+# Capstone Project: Autonomous Drone Navigation Using Convolutional Neural Netowrks
 
-Is it possible to train a drone — through supervised or reinforcement learning — to navigate by visual information alone?
+Is it possible to train a drone through supervised learning to navigate by visual information alone?
 
 Consider how a teenager learns to drive a car... before they drive solo, they have hours of reinforcement learning with the help of a trainer — sometimes in the form of a parent screaming “STOP!” at critical times.  And before that, they have years of learning by example as they watch from the backseat as mom and dad drive.
 
@@ -8,11 +8,11 @@ This project will demonstrate how similar training techniques can be used to tra
 
 ## Resources
 
-* [Parrot AR.Drone 2.0](https://www.parrot.com/us/drones/parrot-ardrone-20-power-édition#ar-drone-20-power-edition): A consumer-grade drone excellent stability control and an [SDK]( http://developer.parrot.com/docs/SDK2/) for programmatic navigation control and sensor data collection.  The AR.Drone has a forward-facing camera capable of sending individual snapshots and streaming video to a supervising program.
+* [Parrot Bebop 2](https://www.parrot.com/us/Drones/Parrot-bebop-2): A consumer-grade drone excellent stability control and an [SDK](http://developer.parrot.com/docs/bebop/#general-information) for programmatic navigation control and sensor data collection.  The Bebop 2 has a forward-facing camera capable of sending individual snapshots and streaming video to a supervising program.
 
 * [Robot Operating System (ROS)](http://www.ros.org): A well-established open source framework for controlling robotic arms, mobile robots and drones.  With Python library bindings and support for Ubuntu.
 
-* ["AR.Drone" Autonomy” ROS Node](https://ardrone-autonomy.readthedocs.io): A ROS module based on the Parrot SDK that permits an easy-to-use API for controlling drone flight and reading drone sensors.
+* ["Bebop Autonomy” ROS Node](https://bebop-autonomy.readthedocs.io): A ROS module based on the Parrot SDK that permits an easy-to-use API for controlling drone flight and reading drone sensors.
 
 The AR.Drone Autonomy ROS Node defers complex stability control functions to the Parrot firmware and exposes simplified navigation operations via the ROS interface.  Navigation operations include:
 
