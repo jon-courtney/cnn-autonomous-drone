@@ -1,12 +1,10 @@
-from Action import Action
+from shared.Action import Action
 
 import numpy as np
 np.random.seed(1337)  # for reproducibility
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
-import argparse
-import sys
-import pdb
+import argparse, sys, pdb
 
 from keras import backend as K
 from keras.models import Sequential, load_model
@@ -238,7 +236,7 @@ class CNNModel():
     def test(self):
         print('Testing model...')
         y_pred = self.predict_class()
-        class_names = Action.names[0:self.num_classes]
+        class_names = Action().names[0:self.num_classes]
 
         accuracy = accuracy_score(self.y['test'], y_pred)
         print('Accuracy: {}'.format(accuracy))
