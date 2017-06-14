@@ -1,7 +1,7 @@
 # AnnotateBase
 
-def AnnotateBase:
-    def __init__():
+class AnnotateBase(object):
+    def __init__(self):
         self.image_data = None
         self.num_images = 0
         self.width = 0
@@ -10,7 +10,8 @@ def AnnotateBase:
         self.labels = None
         self.data = None
         self.num_annotated = 0
+        self.chans = 3
+        self.num_actions = 4
 
 if __name__ == '__main__':
     print('Base class for Annotate and Player')
-    
