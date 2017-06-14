@@ -19,13 +19,14 @@ class CNNModel():
 
     def __init__(self, num_epoch=5, batch_size=50, num_filters=24, kernel_size=5, kernel_initializer='glorot_uniform', verbose=True):
 
-        self.num_epoch = num_epoch
-        self.batch_size = batch_size
-        self.num_filters = num_filters
-        self.kernel_size = kernel_size
+        self.num_epoch          = num_epoch
+        self.batch_size         = batch_size
+        self.num_filters        = num_filters
+        self.kernel_size        = kernel_size
         self.kernel_initializer = kernel_initializer
-        self.pool_size = (2, 2)
-        self.num_dense = 64
+        self.pool_size          = (2, 2)
+        self.num_dense          = 64
+        self.verbose            = verbose
 
         # Other instance variables, for the record...
         self.X             = dict()
@@ -59,7 +60,7 @@ class CNNModel():
             self._load_test_data(file)
 
 
-    def _load_train_data(self, trainfile, verbose=True):
+    def _load_train_data(self, trainfile):
         (X_train, X_val, y_train, y_val), (rows, cols, chans) = self._read_data(trainfile, split=True)
 
         self.X['train']   = X_train
@@ -77,7 +78,7 @@ class CNNModel():
 
         self._normalize_data(targets=['train', 'val'])
 
-        if verbose:
+        if self.verbose:
             print(X_train.shape[0], 'train samples')
             print(X_val.shape[0], 'validation samples')
             print('Num. classes: {}'.format(self.num_classes))
@@ -85,7 +86,7 @@ class CNNModel():
             print('Input shape: {}'.format(self.input_shape))
 
 
-    def _load_test_data(self, testfile, verbose=True):
+    def _load_test_data(self, testfile):
         (X_test, y_test), (rows, cols, chans) = self._read_data(testfile, split=False)
 
         self.X['test']    = X_test
@@ -98,7 +99,7 @@ class CNNModel():
 
         self._normalize_data(targets=['test'])
 
-        if verbose:
+        if self.verbose:
             print(X_test.shape[0], 'test samples')
 
 
@@ -209,10 +210,15 @@ class CNNModel():
 
 
     def fit(self):
+        if verbose:
+            verbosity = 1
+        else:
+            verbosity = 0
+
         self.model.fit(self.X['train'], self.Y['train'],
                        batch_size=self.batch_size,
                        epochs=self.num_epoch,
-                       verbose=1,
+                       verbose=verbosity,
                        class_weight=self.class_weights,
                        validation_data=(self.X['val'], self.Y['val']))
 
@@ -272,30 +278,46 @@ def get_args():
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--train', nargs=2, metavar=('trainfile', 'testfile'), help='train and test the model')
     group.add_argument('--test', metavar='testfile', help='test the model')
+    group.add_argument('--resume', nargs=2, metavar=('trainfile', 'testfile'), help='reload model and resume training')
     parser.add_argument('--model', default='model.hdf5', metavar='modelfile', help='model file to save or load')
     parser.add_argument('--epochs', type=int, default=1, metavar='num_epochs', help='Number of epochs to train')
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--verbose', default=True, action='store_true', help='make chatty')
+    group.add_argument('--quiet', default=False, action='store_true', help='make quiet')
 
     return parser.parse_args()
 
 
 if __name__ == '__main__':
     args = get_args()
+    verbose = not args.quiet
 
-    model = CNNModel(num_epoch=args.epochs)
+    model = CNNModel(num_epoch=args.epochs, verbose=verbose)
 
     if args.train:
         trainfile, testfile = args.train
         model.load_data(trainfile, type='train')
         model.load_data(testfile, type='test')
         model.build()
-        model.print_summary()
+        if verbose:
+            model.print_summary()
         model.fit()
         model.test()
-
-        if args.model:
-            model.save_model(args.model)
-    else:
+        model.save_model(args.model)
+    elif args.test:
         testfile = args.test
         model.load_data(testfile, type='test')
         model.load_model(args.model)
         model.test()
+    elif args.resume:
+        trainfile, testfile = args.resume
+        model.load_data(trainfile, type='train')
+        model.load_data(testfile, type='test')
+        model.load_model(args.model)
+        if verbose:
+            model.print_summary()
+        model.fit()
+        model.test()
+        model.save_model(args.model)
+    else:
+        assert False, 'Unknown command'
