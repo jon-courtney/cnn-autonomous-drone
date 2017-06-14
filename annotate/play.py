@@ -16,7 +16,7 @@ class Player(AnnotateBase):
     def __init__(self):
         super(Player, self).__init__()
 
-    def play(self, file):
+    def play(self, file, mode='HSV'):
         npz = np.load(file)
         data = self.data = npz['data']
         labels = self.labels = npz['labels']
@@ -32,7 +32,7 @@ class Player(AnnotateBase):
 
         i = 0
         while i < n:
-            image = Image.frombytes('HSV', (w, h), data[i])
+            image = Image.frombytes(mode, (w, h), data[i])
             iw.show_image(image)
             iw.force_focus()
             print 'Image %d / %d: %s' % (i, n, action.name(labels[i]))
@@ -52,6 +52,7 @@ class Player(AnnotateBase):
 def get_args():
     parser = argparse.ArgumentParser(description='Play back drone flight images with associated action commands.  NOTE: Python 2 required.', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('infile', metavar='npzfile_in', help='npz file to play back')
+    parser.add_argument('--mode', default='HSV', choices=['RGB', 'HSV', 'YCrCb'], help='Image format to which to convert')
 
     return parser.parse_args()
 
@@ -60,4 +61,4 @@ if __name__ == '__main__':
     args = get_args()
 
     a = Player()
-    a.play(args.infile)
+    a.play(args.infile, args.mode)
