@@ -7,14 +7,14 @@ from io import BytesIO
 import numpy as np
 import argparse, sys, pdb
 
-from ImageWindow import ImageWindow
+from imagewindow import ImageWindow
 from shared.action import Action
 from base import AnnotateBase
 
 
 class Player(AnnotateBase):
     def __init__(self):
-        super().__init__()
+        super(Player, self).__init__()
 
     def play(self, file):
         npz = np.load(file)
@@ -23,7 +23,8 @@ class Player(AnnotateBase):
         n = self.num_annotated = data.shape[0]
         w = self.width = 214
         h = self.height = 120
-        size = w*h*3
+        c = self.chans = 3
+        size = w*h*c
         iw = ImageWindow(w, h)
         action = Action()
 
