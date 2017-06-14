@@ -1,4 +1,6 @@
 # concat.py
+# TODO: Add argparse support
+
 import numpy as np
 import sys
 
