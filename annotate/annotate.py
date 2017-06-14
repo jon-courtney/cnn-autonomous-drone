@@ -9,18 +9,11 @@ import argparse, sys, pdb
 
 #from ImageWindow import ImageWindow
 from shared.Action import Action
+from base import AnnotateBase
 
-
-class Annotator:
+class Annotator(AnnotateBase):
     def __init__(self):
-        self.image_data = None
-        self.num_images = 0
-        self.width = 0
-        self.height = 0
-        self.scale = 4
-        self.labels = None
-        self.data = None
-        self.num_annotated = 0
+        super().__init__()
 
     def _load_bag_data(self, file):
         bag = rosbag_pandas.bag_to_dataframe(file)

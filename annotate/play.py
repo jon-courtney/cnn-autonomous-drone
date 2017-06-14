@@ -9,18 +9,12 @@ import argparse, sys, pdb
 
 from ImageWindow import ImageWindow
 from shared.Action import Action
+from base import AnnotateBase
 
 
-class Annotator:
+class Player(AnnotateBase):
     def __init__(self):
-        self.image_data = None
-        self.num_images = 0
-        self.width = 0
-        self.height = 0
-        self.scale = 4
-        self.labels = None
-        self.data = None
-        self.num_annotated = 0
+        super().__init__()
 
     def play(self, file):
         npz = np.load(file)
@@ -64,5 +58,5 @@ def get_args():
 if __name__ == '__main__':
     args = get_args()
 
-    a = Annotator()
+    a = Player()
     a.play(args.infile)
