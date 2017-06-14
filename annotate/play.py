@@ -51,7 +51,7 @@ class Player(AnnotateBase):
 
 def get_args():
     parser = argparse.ArgumentParser(description='Play back drone flight images with associated action commands.  NOTE: Python 2 required.', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('infile', metavar='in_npzfile', help='npz file to play back')
+    parser.add_argument('infile', metavar='npzfile_in', help='npz file to play back')
 
     return parser.parse_args()
 
