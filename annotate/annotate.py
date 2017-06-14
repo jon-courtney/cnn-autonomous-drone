@@ -106,7 +106,7 @@ class Annotator(AnnotateBase):
 
 
     def convert(self, bagfile, npzfile_in, npzfile_out, mode):
-        self._load_data(bagfile)
+        self._load_bag_data(bagfile)
         w = self.width
         h = self.height
         s = self.scale
