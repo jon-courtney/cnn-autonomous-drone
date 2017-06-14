@@ -17,9 +17,10 @@ import keras.metrics as metrics
 
 class CNNModel():
 
-    def __init__(self, num_epoch=5, batch_size=50, num_filters=24, kernel_size=5, kernel_initializer='glorot_uniform', verbose=True):
+    def __init__(self, num_epoch=5, num_hidden=1, batch_size=50, num_filters=24, kernel_size=5, kernel_initializer='glorot_uniform', verbose=True):
 
         self.num_epoch          = num_epoch
+        self.num_hidden         = num_hidden
         self.batch_size         = batch_size
         self.num_filters        = num_filters
         self.kernel_size        = kernel_size
@@ -184,9 +185,9 @@ class CNNModel():
 
         self.model.add(Activation('relu'))
 
-        # # Second hidden layer
-        # self.add(Dense(num_dense//2))
-        # self.add(Activation('relu'))
+        if self.num_hidden > 1:
+            self.add(Dense(self.num_dense//2))
+            self.add(Activation('relu'))
 
         self.model.add(Dropout(0.5)) # zeros out some fraction of inputs, helps prevent overfitting
 
@@ -280,10 +281,11 @@ def get_args():
     group.add_argument('--test', metavar='testfile', help='test the model')
     group.add_argument('--resume', nargs=2, metavar=('trainfile', 'testfile'), help='reload model and resume training')
     parser.add_argument('--model', default='model.hdf5', metavar='modelfile', help='model file to save or load')
-    parser.add_argument('--epochs', type=int, default=1, metavar='num_epochs', help='Number of epochs to train')
+    parser.add_argument('--epochs', type=int, default=1, metavar='E', help='Number of epochs to train')
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--verbose', default=True, action='store_true', help='make chatty')
     group.add_argument('--quiet', default=False, action='store_true', help='make quiet')
+    parser.add_argument('--num_hidden', type=int, default=1, metavar='H', help='number of hidden layers to use')
 
     return parser.parse_args()
 
@@ -292,7 +294,9 @@ if __name__ == '__main__':
     args = get_args()
     verbose = not args.quiet
 
-    model = CNNModel(num_epoch=args.epochs, verbose=verbose)
+    model = CNNModel(num_epoch=args.epochs,
+                     num_hidden=args.num_hidden,
+                     verbose=verbose)
 
     if args.train:
         trainfile, testfile = args.train
