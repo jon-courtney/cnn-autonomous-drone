@@ -1,4 +1,4 @@
-# Capstone Project: Autonomous Drone Navigation Using Convolutional Neural Netowrks
+# Capstone Project: Autonomous Drone Navigation Using Convolutional Neural Networks
 
 Is it possible to train a drone through supervised learning to navigate by visual information alone?
 
