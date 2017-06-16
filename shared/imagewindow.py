@@ -44,6 +44,7 @@ class ImageWindow:
         self.tki = ImageTk.PhotoImage(image)
         self.label = tkinter.Label(self.root, image=self.tki)
         self.label.place(x=0, y=0, width=self.width, height=self.height)
+        return self
 
     def force_focus(self):
         self.root.focus_force()
