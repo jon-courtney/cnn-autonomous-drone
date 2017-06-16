@@ -140,6 +140,13 @@ class CNNModel():
             self.Y[target] = np_utils.to_categorical(self.y[target], self.num_classes)
             self.X[target] = self.X[target].reshape((self.X[target].shape[0], self.rows, self.cols, self.chans))
 
+
+    def _normalize_sample(self, sample):
+        data = sample.astype('float32')
+        data /= 255
+        return data
+
+
     def build(self):
         self.model = Sequential()
 
@@ -211,21 +218,23 @@ class CNNModel():
             samples = self.X['test']
         return self.model.predict_proba(samples)
 
-    def predict_one_proba(self, sample):
-        return self.model.predict_proba(sample[np.newaxis,:])[0]
+    def predict_sample_proba(self, sample):
+        data = self._normalize_sample(sample)
+        return self.model.predict_proba(data[np.newaxis,:], verbose=0)[0]
 
     def predict_classes(self, samples=None):
         if samples is None:
             samples = self.X['test']
         return self.model.predict_classes(samples)
 
-    def predict_one_class(self, sample):
-        return self.model.predict_classes(sample[np.newaxis,:])[0]
+    def predict_sample_class(self, sample):
+        data = self._normalize_sample(sample)
+        return self.model.predict_classes(data[np.newaxis,:], verbose=0)[0]
 
     def test(self):
         print('Testing model...')
         y_pred = self.predict_classes()
-        class_names = Action().names[0:self.num_classes]
+        class_names = Action()._names[0:self.num_classes]
 
         accuracy = accuracy_score(self.y['test'], y_pred)
         print('Accuracy: {}'.format(accuracy))
