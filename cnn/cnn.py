@@ -1,11 +1,9 @@
 #!/usr/bin/env python
-from shared.action import Action
-
 import numpy as np
-np.random.seed(1337)  # for reproducibility
+np.random.seed(1337)
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
-import argparse, sys, pdb
+import argparse, sys, os, pdb
 
 from keras import backend as K
 from keras.models import Sequential, load_model
@@ -14,6 +12,10 @@ from keras.layers.pooling import MaxPooling2D
 from keras.layers.convolutional import Conv2D, SeparableConv2D
 from keras.utils import np_utils
 import keras.metrics as metrics
+
+parent_dir = os.path.abspath('..')
+sys.path.append(parent_dir)
+from shared.action import Action
 
 
 class CNNModel():
@@ -138,26 +140,6 @@ class CNNModel():
             self.X[target] /= 255
             self.Y[target] = np_utils.to_categorical(self.y[target], self.num_classes)
             self.X[target] = self.X[target].reshape((self.X[target].shape[0], self.rows, self.cols, self.chans))
-
-        # # Convert to range 0.0 - 1.0
-        # self.X['train'] = self.X['train'].astype('float32')
-        # self.X['val']   = self.X['val'].astype('float32')
-        # self.X['test']  = self.X['test'].astype('float32')
-        # self.X['train'] /= 255
-        # self.X['val']   /= 255
-        # self.X['test']  /= 255
-        #
-        # # convert class vectors to binary class matrices
-        # self.Y['train'] = np_utils.to_categorical(self.y['train'], self.num_classes)
-        # self.Y['val']   = np_utils.to_categorical(self.y['val'], self.num_classes)
-        # self.Y['test']  = np_utils.to_categorical(self.y['test'], self.num_classes)
-        #
-        # # reshape image for Keras, note that image_dim_ordering set in ~.keras/keras.json
-        # K.set_image_data_format('channels_last')
-        # self.X['train'] = self.X['train'].reshape((self.X['train'].shape[0], self.rows, self.cols, self.chans))
-        # self.X['val'] = self.X['val'].reshape((self.X['val'].shape[0], self.rows, self.cols, self.chans))
-        # self.X['test'] = self.X['test'].reshape((self.X['test'].shape[0], self.rows, self.cols, self.chans))
-
 
     def build(self):
         self.model = Sequential()
