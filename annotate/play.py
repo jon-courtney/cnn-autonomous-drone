@@ -8,9 +8,9 @@ import numpy as np
 import argparse, sys, os, pdb
 
 sys.path.append(os.path.abspath('..'))
-from imagewindow import ImageWindow
 from base import AnnotateBase
 from shared.action import Action
+from shared.imagewindow import ImageWindow
 
 
 class Player(AnnotateBase):
