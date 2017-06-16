@@ -13,8 +13,16 @@ import sys, os, pdb
 sys.path.append(os.path.abspath('../..'))
 from cnn.cnn import CNNModel
 from shared.action import Action
+from shared.imagewindow import ImageWindow
+
+
+# TODO: For the love of Pete, get rid of these globals!
 
 ns = '/bebop/'
+
+iw = None
+count = 0
+
 
 # Publishers
 takeoff  = rospy.Publisher(ns+'takeoff', Empty, latch=True, queue_size=1)
@@ -35,11 +43,11 @@ forward.linear.x = 0.2
 
 stop = Twist()
 
-
 # Remember to scale commands for slow-mo!
 
 def give_command(act, action):
     rospy.loginfo('Command {}'.format(action.name(act)))
+    rospy.loginfo('-----')
 
     if act == action.SCAN or action.TARGET_RIGHT:
         command = right
@@ -54,15 +62,24 @@ def give_command(act, action):
     move.publish(command)
 
 
-def get_image(count):
+def get_image():
+    global iw, count
+
     msg = rospy.client.wait_for_message(ns+'image_raw', Image)
     h = msg.height
     w = msg.width
     s = 4  # hard-code proper size instead?
+
+
+    if iw is None:
+        iw = ImageWindow(w/s, h/s)
+
     rospy.loginfo('{}: Got {} x {} image'.format(count, w, h))
+    count += 1
 
     image = PILImage.frombytes('RGB', (w, h), msg.data)
     resized = image.resize((w/s, h/s), resample=PILImage.LANCZOS)
+    iw.show_image(resized).update()
     hsv = resized.convert('HSV')
     return np.fromstring(hsv.tobytes(), dtype='byte').reshape((h/s, w/s, 3))
 
@@ -131,17 +148,16 @@ def cnn_navigator():
     #     pub.publish(msg)
     #     rate.sleep()
 
-    count = 0
     while not rospy.is_shutdown():
-        img = get_image(count)
+        img = get_image()
         act = cnn.predict_sample_class(img)  # could do predict-one_proba
         give_command(act, action)
-        count += 1
 
     rospy.loginfo('land')
     land.publish()
 
 if __name__ == '__main__':
+    iw = None
     try:
         cnn_navigator()
     except rospy.ROSInterruptException:
