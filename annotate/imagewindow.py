@@ -13,6 +13,7 @@ class ImageWindow:
     def __init__(self, width, height, root=None):
         if root==None:
             self.root = tkinter.Tk()
+            # self.root = tkinter.Toplevel()
         else:
             self.root = root
 
@@ -49,6 +50,9 @@ class ImageWindow:
 
     def wait(self):
         self.root.mainloop()
+
+    def update(self):
+        self.root.update()
 
     def close(self):
         self.root.destroy()
