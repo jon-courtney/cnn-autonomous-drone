@@ -11,9 +11,10 @@ import numpy as np
 
 from PIL import Image as PILImage
 
+from io import BytesIO
 import sys, os, pdb
-sys.path.append(os.path.abspath('..'))
-from base import AnnotateBase
+sys.path.append(os.path.abspath('../..'))  # Not clean
+from annotate.base import AnnotateBase
 
 ns = '/bebop/'
 
@@ -27,27 +28,28 @@ class DroneSimulator(AnnotateBase):
         self.camera  = rospy.Publisher(ns+'image_raw', Image, latch=True, queue_size=1)
 
     # Consider re-using from Annotator
-    def _load_bag_data(file):
+    def _load_bag_data(self, file):
         bag = rosbag_pandas.bag_to_dataframe(file)
         bag = bag.rename(columns={'bebop_image_raw_throttle_compressed__data': 'data', 'bebop_image_raw_throttle_compressed__format': 'format'})
 
         df = bag[bag['format'].notnull()]
         self.image_data = df['data'].values
         self.num_images = self.image_data.size
-        (self.width, self.height) = Image.open(BytesIO(self.image_data[0])).size
+        (self.width, self.height) = PILImage.open(BytesIO(self.image_data[0])).size
 
         assert self.width==856 and self.height==480, "Unexpected image dimensions (%d, %d)" % (self.width, self.height)
 
     def next_image(self):
-        data = self.image_data[self.frame % self.num_images]
+        i = self.frame % self.num_images
+        image = PILImage.open(BytesIO(self.image_data[i]))
         self.frame += 1
-        return data
+        return image.tobytes()
 
     def image_from_data(self, data):
         self.msg.height = self.height
         self.msg.width = self.width
         self.msg.encoding = 'rgb8'
-        self.msg.step = data.size / self.height
+        self.msg.step = len(data) / self.height
         self.msg.data = data
         return self.msg
 

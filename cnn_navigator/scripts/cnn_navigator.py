@@ -5,11 +5,12 @@ from std_msgs.msg import String, Empty
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Twist
 
+import numpy as np
 from PIL import Image as PILImage
 
 import sys, os, pdb
 
-sys.path.append(os.path.abspath('..'))
+sys.path.append(os.path.abspath('../..'))
 from cnn.cnn import CNNModel
 from shared.action import Action
 
@@ -38,13 +39,13 @@ stop = Twist()
 # Remember to scale commands for slow-mo!
 
 def give_command(act, action):
-    rospy.loginfo('Command {}'.format(action.names(act)))
+    rospy.loginfo('Command {}'.format(action.name(act)))
 
     if act == action.SCAN or action.TARGET_RIGHT:
         command = right
     elif act == action.TARGET_LEFT:
         command = left
-    elif act = action.TARGET:
+    elif act == action.TARGET:
         command = forward
     else:
         rospy.loginfo('Stop')
@@ -53,21 +54,17 @@ def give_command(act, action):
     move.publish(command)
 
 
-def get_image():
-    # could simulate image capture here
+def get_image(count):
     msg = rospy.client.wait_for_message(ns+'image_raw', Image)
     h = msg.height
     w = msg.width
     s = 4  # hard-code proper size instead?
-    rospy.loginfo('Got {} x {} image'.format(w, h))
-    rospy.loginfo('Encoding: {}'.format(msg.encoding))
-    rospy.loginfo('Data size: {}'.format(len(msg.data)))
-    rospy.loginfo('Data type: {}'.format(type(msg.data)))
+    rospy.loginfo('{}: Got {} x {} image'.format(count, w, h))
 
-    image = PILImage.frombytes('rgb', (w, h), msg.data)
-    resized = image.resize((w/s, h/s), resample=Image.LANCZOS)
+    image = PILImage.frombytes('RGB', (w, h), msg.data)
+    resized = image.resize((w/s, h/s), resample=PILImage.LANCZOS)
     hsv = resized.convert('HSV')
-    return np.fromstring(hsv.tobytes(), dtype='byte')
+    return np.fromstring(hsv.tobytes(), dtype='byte').reshape((h/s, w/s, 3))
 
 # needed?
 def image_callback(msg):
@@ -81,7 +78,7 @@ def land_now():
 def cnn_navigator():
     #CNN
     cnn = CNNModel(verbose=False)
-    cnn.load_model(args.model)
+    cnn.load_model()
     action = Action()
 
     # Inialize
@@ -96,7 +93,9 @@ def cnn_navigator():
     #     takeoff.publish()
     #     rospy.sleep(.2)
     takeoff.publish()
-    rospy.sleep(10)  # Would be better to get callback when ready...
+    ### ADD THIS BACK IN!!!
+    rospy.loginfo('MISSING SLEEP')
+    #rospy.sleep(10)  # Would be better to get callback when ready...
 
     # rospy.loginfo('turn right')
     # move.publish(turn_right)
@@ -132,10 +131,12 @@ def cnn_navigator():
     #     pub.publish(msg)
     #     rate.sleep()
 
+    count = 0
     while not rospy.is_shutdown():
-        img = get_image()
-        act = cnn.predict_one_class(img)  # could do predict-one_proba
+        img = get_image(count)
+        act = cnn.predict_sample_class(img)  # could do predict-one_proba
         give_command(act, action)
+        count += 1
 
     rospy.loginfo('land')
     land.publish()
