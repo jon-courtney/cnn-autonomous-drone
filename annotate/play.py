@@ -2,7 +2,7 @@
 #
 from __future__ import print_function
 import pandas as pd
-from PIL import Image, ImageDraw
+from PIL import Image
 from io import BytesIO
 import numpy as np
 import argparse, sys, os, pdb
