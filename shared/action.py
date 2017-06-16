@@ -10,7 +10,7 @@ class Action:
         self.TARGET_UP = 4
         self.TARGET_DOWN = 5
 
-        self.names = ['SCAN', 'TARGET', 'TARGET_LEFT', 'TARGET_RIGHT', 'TARGET_UP', 'TARGET_DOWN']
+        self._names = ['SCAN', 'TARGET', 'TARGET_LEFT', 'TARGET_RIGHT', 'TARGET_UP', 'TARGET_DOWN']
 
     def name(self, i):
-        return self.names[i]
+        return self._names[i]
