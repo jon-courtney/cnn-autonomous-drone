@@ -226,24 +226,24 @@ class CNNModel():
 
 
     def predict_proba(self, samples=None):
-        if not samples:
+        if samples is None:
             samples = self.X['test']
-
-        # Add logic to handle single sample
         return self.model.predict_proba(samples)
 
+    def predict_one_proba(self, sample):
+        return self.model.predict_proba(sample[np.newaxis,:])[0]
 
-    def predict_class(self, samples=None):
-        if not samples:
+    def predict_classes(self, samples=None):
+        if samples is None:
             samples = self.X['test']
-
-        # Add logic to handle single sample
         return self.model.predict_classes(samples)
 
+    def predict_one_class(self, sample):
+        return self.model.predict_classes(sample[np.newaxis,:])[0]
 
     def test(self):
         print('Testing model...')
-        y_pred = self.predict_class()
+        y_pred = self.predict_classes()
         class_names = Action().names[0:self.num_classes]
 
         accuracy = accuracy_score(self.y['test'], y_pred)
