@@ -248,12 +248,12 @@ class CNNModel():
 
         accuracy = accuracy_score(self.y['test'], y_pred)
         print('Accuracy: {}'.format(accuracy))
-        print()
+        print('')
 
         print('Classification report:')
         report = classification_report(self.y['test'], y_pred, target_names=class_names)
         print(report)
-        print()
+        print('')
 
         print('Confusion matrix:')
         confusion = confusion_matrix(self.y['test'], y_pred)
@@ -262,7 +262,7 @@ class CNNModel():
         # print('Testing model...')
         # scores = self.model.evaluate(self.X['test'], self.Y['test'], verbose=0)
         #
-        # print()
+        # print('')
         # for i in range(len(scores)):
         #     print('{}: {}'.format(self.model.metrics_names[i], score[i]))
 
