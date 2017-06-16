@@ -1,15 +1,16 @@
-# annotate.py
+#!/usr/bin/env python
 #
+from __future__ import print_function
 import pandas as pd
-import rosbag_pandas
 from PIL import Image, ImageDraw
 from io import BytesIO
 import numpy as np
-import argparse, sys, pdb
+import argparse, sys, os, pdb
 
+sys.path.append(os.path.abspath('..'))
 from imagewindow import ImageWindow
-from shared.action import Action
 from base import AnnotateBase
+from shared.action import Action
 
 
 class Player(AnnotateBase):
@@ -35,7 +36,7 @@ class Player(AnnotateBase):
             image = Image.frombytes(mode, (w, h), data[i])
             iw.show_image(image)
             iw.force_focus()
-            print 'Image %d / %d: %s' % (i, n, action.name(labels[i]))
+            print('Image {} / {}: {}'.format(i, n, action.name(labels[i])))
             iw.wait()
 
             key = iw.get_key()

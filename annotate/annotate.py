@@ -1,15 +1,18 @@
-# annotate.py
+#!/usr/bin/env python
 #
+from __future__ import print_function
 import pandas as pd
 import rosbag_pandas
 from PIL import Image, ImageDraw
 from io import BytesIO
 import numpy as np
-import argparse, sys, pdb
+import argparse, sys, os, pdb
 
+sys.path.append(os.path.abspath('..'))
 from imagewindow import ImageWindow
-from shared.action import Action
 from base import AnnotateBase
+from shared.action import Action
+
 
 class Annotator(AnnotateBase):
     def __init__(self):
@@ -62,19 +65,19 @@ class Annotator(AnnotateBase):
             iw.show_image(image)
             iw.force_focus()
 
-            print 'Image %d / %d:' % (i, self.num_images),
+            print('Image {} / {}:'.format(i, self.num_images), end='')
 
             iw.wait()
 
             key = iw.get_key()
 
             if key=='Escape':
-                print '(QUIT)'
+                print('(QUIT)')
                 break
             elif key=='BackSpace':
                 if i > 0:
                     i -= 1
-                print '(BACK)'
+                print('(BACK)')
                 continue
             elif key=='space':
                 label = action.SCAN
@@ -93,7 +96,7 @@ class Annotator(AnnotateBase):
 
             self.labels[i] = label
             self.data[i] = np.fromstring(hsv.tobytes(), dtype='byte')
-            print action.name(label)
+            print(action.name(label))
             i += 1
 
         iw.close()
@@ -132,7 +135,7 @@ class Annotator(AnnotateBase):
             else:
                 new_img = resized.convert(mode)
             data[i] = np.fromstring(new_img.tobytes(), dtype='byte')
-            print "%d : %d" % (i, n)
+            print('{} : {}'.format(i, n))
 
         np.savez(npzfile_out, data=data, labels=labels)
 
