@@ -1,6 +1,9 @@
 # ImageWindow.py
 from PIL import Image, ImageDraw, ImageTk
-import Tkinter
+try:
+    import Tkinter as tkinter
+except ImportError:
+    import tkinter
 
 # Thanks to the following examples for the Tk code...
 # http://code.activestate.com/recipes/521918-pil-and-tkinter-to-display-images/
@@ -9,7 +12,7 @@ import Tkinter
 class ImageWindow:
     def __init__(self, width, height, root=None):
         if root==None:
-            self.root = Tkinter.Toplevel()
+            self.root = tkinter.Tk()
         else:
             self.root = root
 
@@ -38,7 +41,7 @@ class ImageWindow:
 
     def show_image(self, image):
         self.tki = ImageTk.PhotoImage(image)
-        self.label = Tkinter.Label(self.root, image=self.tki)
+        self.label = tkinter.Label(self.root, image=self.tki)
         self.label.place(x=0, y=0, width=self.width, height=self.height)
 
     def force_focus(self):
