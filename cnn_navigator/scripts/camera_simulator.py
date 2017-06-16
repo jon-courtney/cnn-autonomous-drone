@@ -21,9 +21,9 @@ ns = '/bebop/'
 
 
 
-class DroneSimulator(AnnotateBase):
+class CameraSimulator(AnnotateBase):
     def __init__(self, display=False):
-        super(DroneSimulator, self).__init__()
+        super(CameraSimulator, self).__init__()
         self.frame = 0
         self.msg = Image()
         self.camera  = rospy.Publisher(ns+'image_raw', Image, latch=True, queue_size=1)
@@ -86,7 +86,7 @@ class DroneSimulator(AnnotateBase):
 
 if __name__ == '__main__':
     bagfile = 'test.bag'
-    drone = DroneSimulator()
+    drone = CameraSimulator()
     try:
         drone.simulate(bagfile)
     except rospy.ROSInterruptException:
