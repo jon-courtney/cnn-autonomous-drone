@@ -22,6 +22,7 @@ ns = '/bebop/'
 
 iw = None
 count = 0
+display = False
 
 
 # Publishers
@@ -63,15 +64,15 @@ def give_command(act, action):
 
 
 def get_image():
-    global iw, count
+    global iw, count, display
 
     msg = rospy.client.wait_for_message(ns+'image_raw', Image)
     h = msg.height
     w = msg.width
-    s = 4  # hard-code proper size instead?
+    s = 4  # TODO: hard-code expected size instead
 
 
-    if iw is None:
+    if display and iw is None:
         iw = ImageWindow(w/s, h/s)
 
     rospy.loginfo('{}: Got {} x {} image'.format(count, w, h))
@@ -79,7 +80,10 @@ def get_image():
 
     image = PILImage.frombytes('RGB', (w, h), msg.data)
     resized = image.resize((w/s, h/s), resample=PILImage.LANCZOS)
-    iw.show_image(resized).update()
+
+    if display:
+        iw.show_image(resized).update()
+
     hsv = resized.convert('HSV')
     return np.fromstring(hsv.tobytes(), dtype='byte').reshape((h/s, w/s, 3))
 
