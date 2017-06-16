@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from shared.action import Action
 
 import numpy as np
@@ -80,8 +81,8 @@ class CNNModel():
         self._normalize_data(targets=['train', 'val'])
 
         if self.verbose:
-            print(X_train.shape[0], 'train samples')
-            print(X_val.shape[0], 'validation samples')
+            print('{} train samples'.format(X_train.shape[0]))
+            print('{} validation samples'.format(X_val.shape[0]))
             print('Num. classes: {}'.format(self.num_classes))
             print('Train class counts: {}'.format(np.bincount(y_train)))
             print('Input shape: {}'.format(self.input_shape))
@@ -101,7 +102,7 @@ class CNNModel():
         self._normalize_data(targets=['test'])
 
         if self.verbose:
-            print(X_test.shape[0], 'test samples')
+            print('{} test samples'.format(X_test.shape[0]))
 
 
     def _read_data(self, file, split=False):
