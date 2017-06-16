@@ -13,8 +13,7 @@ from keras.layers.convolutional import Conv2D, SeparableConv2D
 from keras.utils import np_utils
 import keras.metrics as metrics
 
-parent_dir = os.path.abspath('..')
-sys.path.append(parent_dir)
+sys.path.append(os.path.abspath('..'))
 from shared.action import Action
 
 
