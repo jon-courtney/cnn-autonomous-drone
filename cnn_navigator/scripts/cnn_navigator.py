@@ -7,6 +7,7 @@ from geometry_msgs.msg import Twist
 
 import numpy as np
 from PIL import Image as PILImage
+import math
 
 import sys, os, pdb
 
@@ -25,144 +26,165 @@ count = 0
 display = False
 
 
-# Publishers
-takeoff  = rospy.Publisher(ns+'takeoff', Empty, latch=True, queue_size=1)
-land     = rospy.Publisher(ns+'land', Empty, latch=True, queue_size=1)
-reset    = rospy.Publisher(ns+'reset', Empty, latch=True, queue_size=1)
-flattrim = rospy.Publisher(ns+'flattrim', Empty, latch=True, queue_size=1)
-move     = rospy.Publisher(ns+'cmd_vel', Twist, latch=True, queue_size=1)
+class Command:
+    def __init__(self, scale=10.0):
+        self.scale = scale
 
-# Messages
-right = Twist()
-right.angular.z = -0.31415
+        # Set up publishers
+        self.takeoff  = rospy.Publisher(ns+'takeoff', Empty,
+                                   latch=True, queue_size=1)
+        self.land     = rospy.Publisher(ns+'land', Empty,
+                                   latch=True, queue_size=1)
+        self.reset    = rospy.Publisher(ns+'reset', Empty,
+                                   latch=True, queue_size=1)
+        self.flattrim = rospy.Publisher(ns+'flattrim', Empty,
+                                   latch=True, queue_size=1)
+        self.move     = rospy.Publisher(ns+'cmd_vel', Twist,
+                                   latch=True, queue_size=1)
 
-left = Twist()
-left.angular.z = 0.31415
+        # Set up messages
+        self.right = Twist()
+        self.right.angular.z = -math.pi/self.scale
 
-forward = Twist()
-forward.linear.x = 0.2
+        self.left = Twist()
+        self.left.angular.z = math.pi/self.scale
 
-stop = Twist()
+        self.forward = Twist()
+        self.forward.linear.x = 2/self.scale
 
-# Remember to scale commands for slow-mo!
-
-def give_command(act, action):
-    rospy.loginfo('Command {}'.format(action.name(act)))
-    rospy.loginfo('-----')
-
-    if act == action.SCAN or action.TARGET_RIGHT:
-        command = right
-    elif act == action.TARGET_LEFT:
-        command = left
-    elif act == action.TARGET:
-        command = forward
-    else:
-        rospy.loginfo('Stop')
-        command = stop
-
-    move.publish(command)
+        self.stop = Twist()
 
 
-def get_image():
-    global iw, count, display
+    def do(self, command, msg=None):
 
-    msg = rospy.client.wait_for_message(ns+'image_raw', Image)
-    h = msg.height
-    w = msg.width
-    s = 4  # TODO: hard-code expected size instead
+        assert command in ['takeoff', 'land', 'reset', 'flattrim', 'move']
+        assert msg in [None, 'left', 'right', 'forward', 'stop']
 
+        pub = self.__dict__[command]
 
-    if display and iw is None:
-        iw = ImageWindow(w/s, h/s)
-
-    rospy.loginfo('{}: Got {} x {} image'.format(count, w, h))
-    count += 1
-
-    image = PILImage.frombytes('RGB', (w, h), msg.data)
-    resized = image.resize((w/s, h/s), resample=PILImage.LANCZOS)
-
-    if display:
-        iw.show_image(resized).update()
-
-    hsv = resized.convert('HSV')
-    return np.fromstring(hsv.tobytes(), dtype='byte').reshape((h/s, w/s, 3))
-
-# needed?
-def image_callback(msg):
-    rospy.loginfo('Got {} x {} image'.format(msg.height, msg.width))
-    rospy.sleep(1)
-
-def land_now():
-    rospy.loginfo('land')
-    land.publish()
-
-def cnn_navigator():
-    #CNN
-    cnn = CNNModel(verbose=False)
-    cnn.load_model()
-    action = Action()
-
-    # Inialize
-    rospy.init_node('cnn_navigator')
-    rospy.on_shutdown(land_now)
-
-    # rospy.Subscriber(ns+'image_raw', Image, Image_callback, queue_size=1)
-    # rospy.spin()
-
-    rospy.loginfo('takeoff')
-    # for i in range(5):
-    #     takeoff.publish()
-    #     rospy.sleep(.2)
-    takeoff.publish()
-    ### ADD THIS BACK IN!!!
-    rospy.loginfo('MISSING SLEEP')
-    #rospy.sleep(10)  # Would be better to get callback when ready...
-
-    # rospy.loginfo('turn right')
-    # move.publish(turn_right)
-    # rospy.sleep(2)
-    # for i in range(10):
-    #     move.publish(turn_right)
-    #     rospy.sleep(.2)
-
-    # rospy.loginfo('stop')
-    # move.publish(stop)
-    #
-    # rospy.loginfo('move forward')
-    # move.publish(move_forward)
-    # rospy.sleep(1)
-    # for i in range(5):
-    #     move.publish(move_forward)
-    #     rospy.sleep(.2)
-    #
-    # rospy.loginfo('stop')
-    # move.publish(stop)
-
-    # rospy.sleep(3)
-    # stop.publish()
-    # rospy.sleep(10)
-    # rospy.loginfo('land')
-    # land.publish()
+        if command == 'move':
+            nav_msg = self.__dict__[msg]
+            pub.publish(nav_msg)
+        else:
+            pub.publish()
 
 
-    # rate = rospy.Rate(4)
-    # while not rospy.is_shutdown():
-    #     msg = "hello world %s" % rospy.get_time()
-    #     rospy.loginfo(msg)
-    #     pub.publish(msg)
-    #     rate.sleep()
 
-    while not rospy.is_shutdown():
-        img = get_image()
-        act = cnn.predict_sample_class(img)  # could do predict-one_proba
-        give_command(act, action)
+class CNNNavigator:
 
-    rospy.loginfo('land')
-    land.publish()
+    def __init__(self, auto=False):
+        self.auto = auto
+
+        self.command = Command()
+
+        # Initialize ROS node
+        rospy.init_node('cnn_navigator')
+        rospy.on_shutdown(lambda : self.land_now(self))
+
+        if self.auto:
+            # Load CNN
+            rospy.loginfo('Loading CNN model...')
+            self.cnn = CNNModel(verbose=False)
+            self.cnn.load_model()
+            ropspy.loginfo('CNN model loaded.')
+        else:
+            self.cnn = None
+
+        self.action = Action()
+        self.flying = False
+
+
+    def takeoff(self):
+        rospy.loginfo('takeoff')
+        self.command.do('takeoff')
+        self.flying = True
+        rospy.sleep(10)  # Would be better to get callback when ready...
+
+
+    def land(self):
+        rospy.loginfo('land')
+        self.command.do('land')
+        self.flying = False
+
+    def flattrim(self):
+        rospy.loginfo('flat trim')
+        self.command.do('flattrim')
+
+    def move(self, nav):
+        assert nav in ['left', 'right', 'forward', 'stop']
+        assert self.flying
+        self.command.do('move', nav)
+
+
+    def stop(self):
+        self.move('stop')
+
+
+    def navigate(self):
+        assert self.auto == True
+        assert self.flying
+
+        rospy.loginfo('Starting autonomous navigation')
+        while not rospy.is_shutdown():
+            img = self.get_image()
+            pred = self.cnn.predict_sample_class(img)  # could do predict-one_proba
+            self.give_command(pred)
+        rospy.loginfo('Ending autonomous navigation')
+
+
+    def give_command(self, act):
+        rospy.loginfo('Command {}'.format(self.action.name(act)))
+        rospy.loginfo('-----')
+
+        if act == action.SCAN or action.TARGET_RIGHT:
+            nav = 'right'
+        elif act == action.TARGET_LEFT:
+            nav = 'left'
+        elif act == action.TARGET:
+            nav = 'forward'
+        else:
+            rospy.loginfo('Stop')
+            nav = 'stop'
+
+        self.move(nav)
+
+
+    # TODO: remove globals
+    def get_image(self):
+        global iw, count, display
+
+        msg = rospy.client.wait_for_message(ns+'image_raw', Image)
+        h = msg.height
+        w = msg.width
+        s = 4  # TODO: hard-code expected size instead
+
+        if display and iw is None:
+            iw = ImageWindow(w/s, h/s)
+
+        rospy.loginfo('{}: Got {} x {} image'.format(count, w, h))
+        count += 1
+
+        image = PILImage.frombytes('RGB', (w, h), msg.data)
+        resized = image.resize((w/s, h/s), resample=PILImage.LANCZOS)
+
+        if display:
+            iw.show_image(resized).update()
+
+        hsv = resized.convert('HSV')
+        return np.fromstring(hsv.tobytes(), dtype='byte').reshape((h/s, w/s, 3))
+
+
+    @staticmethod
+    def land_now(obj):
+        rospy.loginfo('land')
+        obj.command.do('land')
+
 
 if __name__ == '__main__':
-    iw = None
     try:
-        cnn_navigator()
+        nav = CNNNavigator(auto=True)
+        nav.takeoff()
+        nav.navigate()
+        nav.land()
     except rospy.ROSInterruptException:
         pass
