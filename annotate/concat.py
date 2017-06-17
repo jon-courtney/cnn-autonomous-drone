@@ -1,4 +1,4 @@
-# concat.py
+#!/usr/bin/env python
 # TODO: Add argparse support
 
 import numpy as np
