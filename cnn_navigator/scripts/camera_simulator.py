@@ -5,8 +5,6 @@ from std_msgs.msg import String, Empty
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Twist
 
-import pandas as pd
-import rosbag_pandas
 import numpy as np
 
 from PIL import Image as PILImage
@@ -14,13 +12,13 @@ from PIL import Image as PILImage
 from io import BytesIO
 import sys, os, pdb
 sys.path.append(os.path.abspath('../..'))  # Not clean
-from annotate.base import AnnotateBase
 from shared.imagewindow import ImageWindow
+from shared.bagreader import BagReader
 
 ns = '/bebop/'
 
 
-class CameraSimulator(AnnotateBase):
+class CameraSimulator(BagReader):
     def __init__(self, display=False):
         super(CameraSimulator, self).__init__()
         self.frame = 0
@@ -28,19 +26,6 @@ class CameraSimulator(AnnotateBase):
         self.camera  = rospy.Publisher(ns+'image_raw', Image, latch=True, queue_size=1)
         self.display = display
         self.iw = None
-
-
-    # Consider re-using from Annotator
-    def _load_bag_data(self, file):
-        bag = rosbag_pandas.bag_to_dataframe(file)
-        bag = bag.rename(columns={'bebop_image_raw_throttle_compressed__data': 'data', 'bebop_image_raw_throttle_compressed__format': 'format'})
-
-        df = bag[bag['format'].notnull()]
-        self.image_data = df['data'].values
-        self.num_images = self.image_data.size
-        (self.width, self.height) = PILImage.open(BytesIO(self.image_data[0])).size
-
-        assert self.width==856 and self.height==480, "Unexpected image dimensions (%d, %d)" % (self.width, self.height)
 
 
     def next_image(self):

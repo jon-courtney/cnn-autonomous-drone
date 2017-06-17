@@ -1,4 +1,4 @@
-# AnnotateBase
+#!/usr/bin/env python
 
 class AnnotateBase(object):
     def __init__(self):
@@ -14,4 +14,4 @@ class AnnotateBase(object):
         self.num_actions = 4
 
 if __name__ == '__main__':
-    print('Base class for Annotate and Player')
+    print('Base class for state used by Annotator')
