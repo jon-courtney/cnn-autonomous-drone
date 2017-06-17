@@ -15,6 +15,7 @@ sys.path.append(os.path.abspath('../..'))
 from cnn.cnn import CNNModel
 from shared.action import Action
 from shared.imagewindow import ImageWindow
+from shared.speaker import Speaker
 
 
 ns = '/bebop/'
@@ -68,11 +69,17 @@ class Command:
 
 class CNNNavigator:
 
-    def __init__(self, auto=False, display=False):
+    def __init__(self, auto=False, display=False, speak=False):
         self.auto = auto
         self.display = display
         self.iw = None
         self._count = 0
+        self.speak = speak
+
+        if speak:
+            self.speaker = Speaker()
+        else:
+            self.speaker = None
 
         self.command = Command()
 
@@ -129,7 +136,7 @@ class CNNNavigator:
         try:
             while True:
                 img = self.get_image()
-                pred = self.cnn.predict_sample_class(img)  # could do predict-one_proba
+                pred = self.cnn.predict_sample_class(img)
                 self.give_command(pred)
         except KeyboardInterrupt:
             rospy.loginfo('End autonomous navigation')
@@ -142,16 +149,25 @@ class CNNNavigator:
         try:
             while True:
                 img = self.get_image()
-                pred = self.cnn.predict_sample_class(img)  # could do predict-one_proba
-                rospy.loginfo('Command {}'.format(self.actions.name(pred)))
+                pred = self.cnn.predict_sample_class(img)
+                command = self.actions.name(pred)
+
+                rospy.loginfo('Command {}'.format(command))
                 rospy.loginfo('-----')
+
+                if self.speak:
+                    self.speaker.speak(command)
         except KeyboardInterrupt:
             rospy.loginfo('End passive classification')
             self.cleanup()
 
 
     def give_command(self, act):
-        rospy.loginfo('Command {}'.format(self.actions.name(act)))
+        command = self.actions.name(act)
+        rospy.loginfo('Command {}'.format(command))
+
+        if self.speak:
+            self.speaker.speak(command)
 
         if act == self.actions.SCAN or self.actions.TARGET_RIGHT:
             nav = 'right'
@@ -210,11 +226,15 @@ class CNNNavigator:
 
 if __name__ == '__main__':
     try:
-        nav = CNNNavigator(auto=True)
-        nav.flattrim()
-        nav.takeoff()
-        nav.navigate()
-        nav.land()
+        nav = CNNNavigator(auto=True, display=True, speak=True)
+        nav.watch()
         nav.shutdown()
+
+        # nav = CNNNavigator(auto=True)
+        # nav.flattrim()
+        # nav.takeoff()
+        # nav.navigate()
+        # nav.land()
+        # nav.shutdown()
     except rospy.ROSInterruptException:
         nav.shutdown()
