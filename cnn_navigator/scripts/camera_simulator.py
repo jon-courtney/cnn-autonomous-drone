@@ -20,7 +20,6 @@ from shared.imagewindow import ImageWindow
 ns = '/bebop/'
 
 
-
 class CameraSimulator(AnnotateBase):
     def __init__(self, display=False):
         super(CameraSimulator, self).__init__()
