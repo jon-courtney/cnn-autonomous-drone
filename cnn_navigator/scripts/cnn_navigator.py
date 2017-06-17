@@ -17,13 +17,7 @@ from shared.action import Action
 from shared.imagewindow import ImageWindow
 
 
-# TODO: For the love of Pete, get rid of these globals!
-
 ns = '/bebop/'
-
-iw = None
-count = 0
-display = False
 
 # TODO: Make publishers static
 class Command:
@@ -74,13 +68,16 @@ class Command:
 
 class CNNNavigator:
 
-    def __init__(self, auto=False):
+    def __init__(self, auto=False, display=False):
         self.auto = auto
+        self.display = display
+        self.iw = None
+        self._count = 0
 
         self.command = Command()
 
         # Initialize ROS node
-        rospy.init_node('cnn_navigator')
+        rospy.init_node('cnn_navigator', disable_signals=True)
         rospy.on_shutdown(lambda : self.emergency_land(self))
 
         if self.auto:
@@ -129,22 +126,28 @@ class CNNNavigator:
         assert self.flying
 
         rospy.loginfo('Begin autonomous navigation')
-        while not rospy.is_shutdown():
-            img = self.get_image()
-            pred = self.cnn.predict_sample_class(img)  # could do predict-one_proba
-            self.give_command(pred)
-        rospy.loginfo('End autonomous navigation')
+        try:
+            while True:
+                img = self.get_image()
+                pred = self.cnn.predict_sample_class(img)  # could do predict-one_proba
+                self.give_command(pred)
+        except KeyboardInterrupt:
+            rospy.loginfo('End autonomous navigation')
+            self.cleanup()
 
     def watch(self):
         assert self.auto
 
         rospy.loginfo('Begin passive classification')
-        while not rospy.is_shutdown():
-            img = self.get_image()
-            pred = self.cnn.predict_sample_class(img)  # could do predict-one_proba
-            rospy.loginfo('Command {}'.format(self.actions.name(pred)))
-            rospy.loginfo('-----')
-        rospy.loginfo('End passive classification')
+        try:
+            while True:
+                img = self.get_image()
+                pred = self.cnn.predict_sample_class(img)  # could do predict-one_proba
+                rospy.loginfo('Command {}'.format(self.actions.name(pred)))
+                rospy.loginfo('-----')
+        except KeyboardInterrupt:
+            rospy.loginfo('End passive classification')
+            self.cleanup()
 
 
     def give_command(self, act):
@@ -164,35 +167,45 @@ class CNNNavigator:
         rospy.loginfo('-----')
 
 
-    # TODO: remove globals
     def get_image(self):
-        global iw, count, display
-
         msg = rospy.client.wait_for_message(ns+'image_raw', Image)
         h = msg.height
         w = msg.width
         s = 4  # TODO: hard-code expected size instead
 
-        if display and iw is None:
-            iw = ImageWindow(w/s, h/s)
+        if self.display and self.iw is None:
+            self.iw = ImageWindow(w/s, h/s)
+            self._count = 0
 
-        rospy.loginfo('{}: Got {} x {} image'.format(count, w, h))
-        count += 1
+        rospy.loginfo('{}: Got {} x {} image'.format(self._count, w, h))
+        self._count += 1
 
         image = PILImage.frombytes('RGB', (w, h), msg.data)
         resized = image.resize((w/s, h/s), resample=PILImage.LANCZOS)
 
-        if display:
-            iw.show_image(resized).update()
+        if self.display:
+            self.iw.show_image(resized).update()
 
         hsv = resized.convert('HSV')
         return np.fromstring(hsv.tobytes(), dtype='byte').reshape((h/s, w/s, 3))
 
+    # TODO: Other functions here?
+    def cleanup(self):
+        if self.display and self.iw is not None:
+            self.iw.close()
+            self.iw = None
+
+    def shutdown(self):
+        self.cleanup()
+        rospy.signal_shutdown('Node shutdown requested')
 
     @staticmethod
     def emergency_land(obj):
         rospy.loginfo('emergency land')
         obj.command.do('land')
+        if obj.display and obj.iw is not None:
+            obj.iw.close()
+            obj.iw = None
 
 
 if __name__ == '__main__':
@@ -202,5 +215,6 @@ if __name__ == '__main__':
         nav.takeoff()
         nav.navigate()
         nav.land()
+        nav.shutdown()
     except rospy.ROSInterruptException:
-        pass
+        nav.shutdown()
