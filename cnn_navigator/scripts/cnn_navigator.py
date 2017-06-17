@@ -146,7 +146,7 @@ class CNNNavigator:
                     rospy.loginfo('UNCERTAIN {} (p={:4.2f})'.format(command, p))
                     if self.speak:
                         self.speaker.speak('UNKNOWN')
-                    c = self.actions.value(self.actions.SCAN)
+                    c = self.actions.SCAN
                     p = 0.0
 
                 self.give_command(c)
@@ -172,7 +172,7 @@ class CNNNavigator:
                     rospy.loginfo('UNCERTAIN {} (p={:4.2f})'.format(command, p))
                     if self.speak:
                         self.speaker.speak('UNKNOWN')
-                    c = self.actions.value(self.actions.SCAN)
+                    c = self.actions.SCAN
                     p = 0.0
 
                 command = self.actions.name(c)
@@ -251,7 +251,7 @@ class CNNNavigator:
 
 if __name__ == '__main__':
     try:
-        nav = CNNNavigator(auto=True, display=True, speak=False)
+        nav = CNNNavigator(auto=True, display=True, speak=True)
         nav.watch()
         nav.shutdown()
 
