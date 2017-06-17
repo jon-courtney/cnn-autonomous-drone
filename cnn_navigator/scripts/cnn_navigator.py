@@ -96,7 +96,6 @@ class CNNNavigator:
         else:
             self.cnn = None
 
-        self.actions = Action()
         self.flying = False
 
 
@@ -142,11 +141,11 @@ class CNNNavigator:
                 p = preds[c]
 
                 if p < 0.5:
-                    command = self.actions.name(c)
+                    command = Action.name(c)
                     rospy.loginfo('UNCERTAIN {} (p={:4.2f})'.format(command, p))
                     if self.speak:
                         self.speaker.speak('UNKNOWN')
-                    c = self.actions.SCAN
+                    c = Action.SCAN
                     p = 0.0
 
                 self.give_command(c)
@@ -168,14 +167,14 @@ class CNNNavigator:
                 p = preds[c]
 
                 if p < 0.5:
-                    command = self.actions.name(c)
+                    command = Action.name(c)
                     rospy.loginfo('UNCERTAIN {} (p={:4.2f})'.format(command, p))
                     if self.speak:
                         self.speaker.speak('UNKNOWN')
-                    c = self.actions.SCAN
+                    c = Action.SCAN
                     p = 0.0
 
-                command = self.actions.name(c)
+                command = Action.name(c)
 
                 rospy.loginfo('Command {} (p={:4.2f})'.format(command, p))
                 rospy.loginfo('-----')
@@ -188,17 +187,17 @@ class CNNNavigator:
 
 
     def give_command(self, act):
-        command = self.actions.name(act)
+        command = Action.name(act)
         rospy.loginfo('Command {}'.format(command))
 
         if self.speak:
             self.speaker.speak(command)
 
-        if act == self.actions.SCAN or self.actions.TARGET_RIGHT:
+        if act == Action.SCAN or Action.TARGET_RIGHT:
             nav = 'right'
-        elif act == self.actions.TARGET_LEFT:
+        elif act == Action.TARGET_LEFT:
             nav = 'left'
-        elif act == self.actions.TARGET:
+        elif act == Action.TARGET:
             nav = 'forward'
         else:
             rospy.loginfo('Stop')

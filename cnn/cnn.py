@@ -234,7 +234,7 @@ class CNNModel():
     def test(self):
         print('Testing model...')
         y_pred = self.predict_classes()
-        class_names = Action()._names[0:self.num_classes]
+        class_names = Action.names[0:self.num_classes]
 
         accuracy = accuracy_score(self.y['test'], y_pred)
         print('Accuracy: {}'.format(accuracy))

@@ -27,7 +27,6 @@ class Annotator(BagReader):
         iw = ImageWindow(w, h)
         self.labels = np.empty(self.num_images, dtype='byte')
         self.data = np.empty((self.num_images, size), dtype='byte')
-        action = Action()
 
         # Check that our incoming image size is as expected...
         image = Image.open(BytesIO(self.image_data[0]))
@@ -66,23 +65,23 @@ class Annotator(BagReader):
                 print('(BACK)')
                 continue
             elif key=='space':
-                label = action.SCAN
+                label = Action.SCAN
             elif key=='Return':
-                label = action.TARGET
+                label = Action.TARGET
             elif key=='Left':
-                label = action.TARGET_LEFT
+                label = Action.TARGET_LEFT
             elif key=='Right':
-                label = action.TARGET_RIGHT
+                label = Action.TARGET_RIGHT
             elif self.num_actions > 4 and key=='Up':
-                label = action.TARGET_UP
+                label = Action.TARGET_UP
             elif self.num_actions > 4 and key=='Down':
-                label = action.TARGET_DOWN
+                label = Action.TARGET_DOWN
             else:
-                label = action.SCAN
+                label = Action.SCAN
 
             self.labels[i] = label
             self.data[i] = np.fromstring(hsv.tobytes(), dtype='byte')
-            print(action.name(label))
+            print(Action.name(label))
             i += 1
 
         iw.close()
