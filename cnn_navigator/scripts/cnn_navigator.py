@@ -92,7 +92,7 @@ class CNNNavigator:
         else:
             self.cnn = None
 
-        self.action = Action()
+        self.actions = Action()
         self.flying = False
 
 
@@ -125,25 +125,36 @@ class CNNNavigator:
 
 
     def navigate(self):
-        assert self.auto == True
+        assert self.auto
         assert self.flying
 
-        rospy.loginfo('Starting autonomous navigation')
+        rospy.loginfo('Begin autonomous navigation')
         while not rospy.is_shutdown():
             img = self.get_image()
             pred = self.cnn.predict_sample_class(img)  # could do predict-one_proba
             self.give_command(pred)
-        rospy.loginfo('Ending autonomous navigation')
+        rospy.loginfo('End autonomous navigation')
+
+    def watch(self):
+        assert self.auto
+
+        rospy.loginfo('Begin passive classification')
+        while not rospy.is_shutdown():
+            img = self.get_image()
+            pred = self.cnn.predict_sample_class(img)  # could do predict-one_proba
+            rospy.loginfo('Command {}'.format(self.actions.name(pred)))
+            rospy.loginfo('-----')
+        rospy.loginfo('End passive classification')
 
 
     def give_command(self, act):
-        rospy.loginfo('Command {}'.format(self.action.name(act)))
+        rospy.loginfo('Command {}'.format(self.actions.name(act)))
 
-        if act == self.action.SCAN or self.action.TARGET_RIGHT:
+        if act == self.actions.SCAN or self.actions.TARGET_RIGHT:
             nav = 'right'
-        elif act == self.action.TARGET_LEFT:
+        elif act == self.actions.TARGET_LEFT:
             nav = 'left'
-        elif act == self.action.TARGET:
+        elif act == self.actions.TARGET:
             nav = 'forward'
         else:
             rospy.loginfo('Stop')
@@ -176,6 +187,7 @@ class CNNNavigator:
 
         hsv = resized.convert('HSV')
         return np.fromstring(hsv.tobytes(), dtype='byte').reshape((h/s, w/s, 3))
+
 
     @staticmethod
     def emergency_land(obj):
