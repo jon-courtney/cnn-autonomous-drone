@@ -142,9 +142,13 @@ class CNNNavigator:
                 p = preds[c]
 
                 if p < 0.5:
+                    command = self.actions.name(c)
+                    rospy.loginfo('UNCERTAIN {} (p={:4.2f})'.format(command, p))
+                    if self.speak:
+                        self.speaker.speak('UNKNOWN')
                     c = self.actions.value(self.actions.SCAN)
-                    rospy.loginfo('Uncertain classification')
-                    
+                    p = 0.0
+
                 self.give_command(c)
         except KeyboardInterrupt:
             rospy.loginfo('End autonomous navigation')
@@ -162,6 +166,15 @@ class CNNNavigator:
 
                 c = np.argmax(preds)
                 p = preds[c]
+
+                if p < 0.5:
+                    command = self.actions.name(c)
+                    rospy.loginfo('UNCERTAIN {} (p={:4.2f})'.format(command, p))
+                    if self.speak:
+                        self.speaker.speak('UNKNOWN')
+                    c = self.actions.value(self.actions.SCAN)
+                    p = 0.0
+
                 command = self.actions.name(c)
 
                 rospy.loginfo('Command {} (p={:4.2f})'.format(command, p))
