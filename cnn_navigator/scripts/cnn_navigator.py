@@ -25,7 +25,7 @@ iw = None
 count = 0
 display = False
 
-
+# TODO: Make publishers static
 class Command:
     def __init__(self, scale=10.0):
         self.scale = scale
@@ -69,6 +69,8 @@ class Command:
             pub.publish()
 
 
+# TODO: Inherit from non-CNN navigator
+# TODO: Add up() and down() methods
 
 class CNNNavigator:
 
@@ -79,14 +81,14 @@ class CNNNavigator:
 
         # Initialize ROS node
         rospy.init_node('cnn_navigator')
-        rospy.on_shutdown(lambda : self.land_now(self))
+        rospy.on_shutdown(lambda : self.emergency_land(self))
 
         if self.auto:
             # Load CNN
             rospy.loginfo('Loading CNN model...')
             self.cnn = CNNModel(verbose=False)
             self.cnn.load_model()
-            ropspy.loginfo('CNN model loaded.')
+            rospy.loginfo('CNN model loaded.')
         else:
             self.cnn = None
 
@@ -98,6 +100,7 @@ class CNNNavigator:
         rospy.loginfo('takeoff')
         self.command.do('takeoff')
         self.flying = True
+        rospy.loginfo('Waiting 10 seconds...')
         rospy.sleep(10)  # Would be better to get callback when ready...
 
 
@@ -113,6 +116,7 @@ class CNNNavigator:
     def move(self, nav):
         assert nav in ['left', 'right', 'forward', 'stop']
         assert self.flying
+        rospy.loginfo(nav)
         self.command.do('move', nav)
 
 
@@ -134,19 +138,19 @@ class CNNNavigator:
 
     def give_command(self, act):
         rospy.loginfo('Command {}'.format(self.action.name(act)))
-        rospy.loginfo('-----')
 
-        if act == action.SCAN or action.TARGET_RIGHT:
+        if act == self.action.SCAN or self.action.TARGET_RIGHT:
             nav = 'right'
-        elif act == action.TARGET_LEFT:
+        elif act == self.action.TARGET_LEFT:
             nav = 'left'
-        elif act == action.TARGET:
+        elif act == self.action.TARGET:
             nav = 'forward'
         else:
             rospy.loginfo('Stop')
             nav = 'stop'
 
         self.move(nav)
+        rospy.loginfo('-----')
 
 
     # TODO: remove globals
@@ -173,16 +177,16 @@ class CNNNavigator:
         hsv = resized.convert('HSV')
         return np.fromstring(hsv.tobytes(), dtype='byte').reshape((h/s, w/s, 3))
 
-
     @staticmethod
-    def land_now(obj):
-        rospy.loginfo('land')
+    def emergency_land(obj):
+        rospy.loginfo('emergency land')
         obj.command.do('land')
 
 
 if __name__ == '__main__':
     try:
         nav = CNNNavigator(auto=True)
+        nav.flattrim()
         nav.takeoff()
         nav.navigate()
         nav.land()
