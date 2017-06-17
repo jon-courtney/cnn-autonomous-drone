@@ -27,16 +27,17 @@ class Player(AnnotateBase):
         c = self.chans = 3
         size = w*h*c
         iw = ImageWindow(w, h)
-        action = Action()
 
-        assert size == data[0].size, "Buffer sizes do not match (%d vs %d)" % (size, data[0].size)
+        assert size == data[0].size, "Unexpected buffer size (%d vs %d)" % (size, data[0].size)
+
+        assert data.shape[0] == labels.shape[0], "Mismatched image and label count"
 
         i = 0
         while i < n:
             image = Image.frombytes(mode, (w, h), data[i])
             iw.show_image(image)
             iw.force_focus()
-            print('Image {} / {}: {}'.format(i, n, action.name(labels[i])))
+            print('Image {} / {}: {}'.format(i, n, Action.name(labels[i])))
             iw.wait()
 
             key = iw.get_key()
@@ -53,7 +54,7 @@ class Player(AnnotateBase):
 def get_args():
     parser = argparse.ArgumentParser(description='Play back drone flight images with associated action commands.  NOTE: Python 2 required.', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('infile', metavar='npzfile_in', help='npz file to play back')
-    parser.add_argument('--mode', default='HSV', choices=['RGB', 'HSV', 'YCrCb'], help='Image format to which to convert')
+    parser.add_argument('--mode', default='HSV', choices=['RGB', 'HSV', 'YCrCb'], help='Image format to use for reading')
 
     return parser.parse_args()
 
