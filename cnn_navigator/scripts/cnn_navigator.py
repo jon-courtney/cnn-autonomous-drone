@@ -187,7 +187,7 @@ class CNNNavigator:
         msg = rospy.client.wait_for_message(ns+'image_raw', Image)
         h = msg.height
         w = msg.width
-        s = 4  # TODO: hard-code expected size instead
+        s = 4  # TODO: force expected size instead
 
         if self.display and self.iw is None:
             self.iw = ImageWindow(w/s, h/s)
