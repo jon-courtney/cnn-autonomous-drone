@@ -136,8 +136,16 @@ class CNNNavigator:
         try:
             while True:
                 img = self.get_image()
-                pred = self.cnn.predict_sample_class(img)
-                self.give_command(pred)
+                # pred = self.cnn.predict_sample_class(img)
+                preds = self.cnn.predict_sample_proba(img)
+                c = np.argmax(preds)
+                p = preds[c]
+
+                if p < 0.5:
+                    c = self.actions.value(self.actions.SCAN)
+                    rospy.loginfo('Uncertain classification')
+                    
+                self.give_command(c)
         except KeyboardInterrupt:
             rospy.loginfo('End autonomous navigation')
             self.cleanup()
@@ -149,10 +157,14 @@ class CNNNavigator:
         try:
             while True:
                 img = self.get_image()
-                pred = self.cnn.predict_sample_class(img)
-                command = self.actions.name(pred)
+                # pred = self.cnn.predict_sample_class(img)
+                preds = self.cnn.predict_sample_proba(img)
 
-                rospy.loginfo('Command {}'.format(command))
+                c = np.argmax(preds)
+                p = preds[c]
+                command = self.actions.name(c)
+
+                rospy.loginfo('Command {} (p={:4.2f})'.format(command, p))
                 rospy.loginfo('-----')
 
                 if self.speak:
@@ -226,7 +238,7 @@ class CNNNavigator:
 
 if __name__ == '__main__':
     try:
-        nav = CNNNavigator(auto=True, display=True, speak=True)
+        nav = CNNNavigator(auto=True, display=True, speak=False)
         nav.watch()
         nav.shutdown()
 
