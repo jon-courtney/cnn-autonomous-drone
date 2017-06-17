@@ -14,3 +14,6 @@ class Action:
 
     def name(self, i):
         return self._names[i]
+
+    def value(self, n):
+        return self._names.index(n)
