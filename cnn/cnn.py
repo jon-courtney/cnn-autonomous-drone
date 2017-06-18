@@ -55,15 +55,61 @@ class CNNModel():
 
 
     def load_data(self, file, type):
-        assert type in ['train', 'test']
+        assert type in ['train', 'test', 'train_and_validate', 'validate']
 
         if type=='train':
             self._load_train_data(file)
-        else:
+        elif type=='test':
             self._load_test_data(file)
-
+        elif type=='train_and_validate':
+            self._load_train_and_validate_data(file)
+        elif type=='validate':
+            self._load_validate_data(file)
+        else:
+            assert False
 
     def _load_train_data(self, trainfile):
+        (X_train, y_train), (rows, cols, chans) = self._read_data(trainfile, split=False)
+
+        self.X['train']   = X_train
+        self.y['train']   = y_train
+        self.rows         = rows
+        self.cols         = cols
+        self.chans        = chans
+        self.input_shape  = (self.rows, self.cols, self.chans)
+
+
+        self.num_classes   = np.unique(y_train).size
+        self.class_weights = dict(enumerate(y_train.size / (self.num_classes * np.bincount(y_train))))
+
+        self._normalize_data(targets=['train'])
+
+        if self.verbose:
+            print('{} train samples'.format(X_train.shape[0]))
+            print('Num. classes: {}'.format(self.num_classes))
+            print('Train class counts: {}'.format(np.bincount(y_train)))
+            print('Input shape: {}'.format(self.input_shape))
+
+    def _load_validate_data(self, trainfile):
+        (X_val, y_val), (rows, cols, chans) = self._read_data(trainfile, split=False)
+
+        self.X['val']     = X_val
+        self.y['val']     = y_val
+        self.rows         = rows
+        self.cols         = cols
+        self.chans        = chans
+        self.input_shape  = (self.rows, self.cols, self.chans)
+
+        if self.num_classes > 0:
+            assert self.num_classes == np.unique(y_val).size
+
+        self._normalize_data(targets=['val'])
+
+        if self.verbose:
+            print('{} validation samples'.format(X_val.shape[0]))
+
+
+    def _load_train_and_validate_data(self, trainfile):
         (X_train, X_val, y_train, y_val), (rows, cols, chans) = self._read_data(trainfile, split=True)
 
         self.X['train']   = X_train
@@ -268,12 +314,13 @@ class CNNModel():
 def get_args():
     parser = argparse.ArgumentParser(description='Build or test convolutional neural network.', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('--train', metavar='trainfile', help='train the model')
-    group.add_argument('--test', metavar='testfile', help='test the model')
-    group.add_argument('--train_and_test', nargs=2, metavar=('trainfile', 'testfile'), help='train and test the model')
-    group.add_argument('--resume', metavar='trainfile', help='reload model and resume training')
-    group.add_argument('--resume_and_test', nargs=2, metavar=('trainfile', 'testfile'), help='reload model, resume training, then test')
-    parser.add_argument('--model', default='model.hdf5', metavar='modelfile', help='model file to save or load')
+    group.add_argument('--train', metavar='<trainfile>', help='train the model')
+    group.add_argument('--test', metavar='<testfile>', help='test the model')
+    group.add_argument('--train_and_test', nargs=2, metavar=('<trainfile>', '<testfile>'), help='train and test the model')
+    group.add_argument('--resume', metavar='<trainfile>', help='reload model and resume training')
+    group.add_argument('--resume_and_test', nargs=2, metavar=('<trainfile>', '<testfile>'), help='reload model, resume training, then test')
+    parser.add_argument('--validate', metavar='<valfile>', help='data for validation')
+    parser.add_argument('--model', default='model.hdf5', metavar='<modelfile>', help='model file to save or load')
     parser.add_argument('--epochs', type=int, default=1, metavar='E', help='Number of epochs to train')
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--verbose', default=True, action='store_true', help='make chatty')
@@ -293,7 +340,12 @@ if __name__ == '__main__':
 
     if args.train:
         trainfile = args.train
-        model.load_data(trainfile, type='train')
+        if args.validate:
+            valfile = args.validate
+            model.load_data(trainfile, type='train')
+            model.load_data(valfile, type='validate')
+        else:
+            model.load_data(trainfile, type='train_and_validate')
         model.build()
         if verbose:
             model.print_summary()
@@ -301,7 +353,12 @@ if __name__ == '__main__':
         model.save_model(args.model)
     elif args.train_and_test:
         trainfile, testfile = args.train_and_test
-        model.load_data(trainfile, type='train')
+        if args.validate:
+            valfile = args.validate
+            model.load_data(trainfile, type='train')
+            model.load_data(valfile, type='validate')
+        else:
+            model.load_data(trainfile, type='train_and_validate')
         model.load_data(testfile, type='test')
         model.build()
         if verbose:
@@ -316,7 +373,12 @@ if __name__ == '__main__':
         model.test()
     elif args.resume:
         trainfile = args.resume
-        model.load_data(trainfile, type='train')
+        if args.validate:
+            valfile = args.validate
+            model.load_data(trainfile, type='train')
+            model.load_data(valfile, type='validate')
+        else:
+            model.load_data(trainfile, type='train_and_validate')
         model.load_model(args.model)
         if verbose:
             model.print_summary()
@@ -324,7 +386,12 @@ if __name__ == '__main__':
         model.save_model(args.model)
     elif args.resume_and_test:
         trainfile, testfile = args.resume_and_test
-        model.load_data(trainfile, type='train')
+        if args.validate:
+            valfile = args.validate
+            model.load_data(trainfile, type='train')
+            model.load_data(valfile, type='validate')
+        else:
+            model.load_data(trainfile, type='train_and_validate')
         model.load_data(testfile, type='test')
         model.load_model(args.model)
         if verbose:
