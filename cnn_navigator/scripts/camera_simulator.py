@@ -23,7 +23,7 @@ class CameraSimulator(BagReader):
         super(CameraSimulator, self).__init__()
         self.frame = 0
         self.msg = Image()
-        self.camera  = rospy.Publisher(ns+'image_raw', Image, latch=True, queue_size=1)
+        self.camera = rospy.Publisher(ns+'image_raw', Image, latch=True, queue_size=1)
         self.display = display
         self.iw = None
 
@@ -35,11 +35,12 @@ class CameraSimulator(BagReader):
         # This logic should probably reside elsewhere
         if self.display:
             self.iw.show_image(image).update()
+
         self.frame += 1
         return image.tobytes()
 
 
-    def image_from_data(self, data):
+    def make_image_msg(self, data):
         self.msg.height = self.height
         self.msg.width = self.width
         self.msg.encoding = 'rgb8'
@@ -58,16 +59,16 @@ class CameraSimulator(BagReader):
             self.iw = ImageWindow(self.width, self.height)
 
         # Initialize
-        rospy.init_node('drone_simulator')
+        rospy.init_node('camera_simulator')
 
         rate = rospy.Rate(4)
         while not rospy.is_shutdown():
-            img = self.image_from_data(self.next_image())
-            self.log_image(img)
-            self.camera.publish(img)
+            img_msg = self.make_image_msg(self.next_image())
+            self.log_image(img_msg)
+            self.camera.publish(img_msg)
             rate.sleep()
 
-
+# TODO: Add argparse support?
 if __name__ == '__main__':
     bagfile = 'test.bag'
     drone = CameraSimulator()
