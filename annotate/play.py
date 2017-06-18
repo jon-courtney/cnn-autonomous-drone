@@ -7,7 +7,7 @@ import numpy as np
 import argparse, sys, os, pdb
 
 sys.path.append(os.path.abspath('..'))
-from share.annotate_base import AnnotateBase
+from shared.annotate_base import AnnotateBase
 from shared.action import Action
 from shared.imagewindow import ImageWindow
 
