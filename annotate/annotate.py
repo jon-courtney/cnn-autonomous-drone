@@ -107,7 +107,8 @@ class Annotator(BagReader):
         labels = self.labels = npz['labels']
         n = self.num_annotated = labels.shape[0]
 
-        assert self.num_images == self.num_annotated
+        if self.num_images != self.num_annotated:
+            print('Warning: bag and npz file lengths differ ({} vs {})'.format(self.num_images, self.num_annotated))
 
         data = self.data = np.empty((self.num_annotated, size), dtype='byte')
 
@@ -120,16 +121,19 @@ class Annotator(BagReader):
         i = 0
         while i < self.num_annotated:
             image = Image.open(BytesIO(self.image_data[i]))\
-                         .crop(w/s, h/s, (s-1)*w/s, (s-1)*h/s)
-            resized = image.resize((w*2/s, h*2/s), resample=Image.LANCZOS)
+                         .crop((w/s, h/s, (s-1)*w/s, (s-1)*h/s))
+            resized = image.resize((w/s, h/s), resample=Image.LANCZOS)
             hsv = resized.convert('HSV')
             iw.show_image(image)
             iw.force_focus()
 
             if edit:
-                print('Image {} / {}:'.format(i, self.num_annotated), end='')
+                print('Image {} / {} ({}): '.format(i, self.num_annotated, Action.name(labels[i])), end='')
+                sys.stdout.flush()
             else:
                 print('Image {} / {}: {}'.format(i, n, Action.name(labels[i])))
+                if labels[i] >= self.num_actions:
+                    print ('>>> CHANGING TO {}'.format(Action.name(Action.SCAN)))
             iw.wait()
 
             key = iw.get_key()
@@ -149,11 +153,12 @@ class Annotator(BagReader):
                 else:
                     edit = True
                     print('(EDIT ON)')
-                if i > 0:
-                    i -= 1
                 continue
             elif not edit:
-                label = self.labels[i]
+                if labels[i] >= self.num_actions:
+                    label = Action.SCAN
+                else:
+                    label = self.labels[i]
             elif key=='space':
                 label = Action.SCAN
             elif key=='Return':
