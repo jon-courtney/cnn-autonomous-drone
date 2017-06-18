@@ -11,8 +11,10 @@ class Action:
 
     names = ['SCAN', 'TARGET', 'TARGET_LEFT', 'TARGET_RIGHT', 'TARGET_UP', 'TARGET_DOWN']
 
+    @staticmethod
     def name(i):
         return Action.names[i]
 
+    @staticmethod
     def value(n):
         return Action.names.index(n)
