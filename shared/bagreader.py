@@ -9,8 +9,8 @@ sys.path.append(os.path.abspath('../..'))  # Not clean
 from annotate_base import AnnotateBase
 
 class BagReader(AnnotateBase):
-    def __init__(self):
-        super(BagReader, self).__init__()
+    def __init__(self, num_actions=4):
+        super(BagReader, self).__init__(num_actions=num_actions)
 
     def _load_bag_data(self, file):
         bag = rosbag_pandas.bag_to_dataframe(file)
