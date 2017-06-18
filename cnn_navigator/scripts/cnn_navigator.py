@@ -67,7 +67,7 @@ class Command:
 # TODO: Inherit from non-CNN navigator
 # TODO: Add up() and down() methods
 
-class CNNNavigator:
+class CNNNavigator(object):
 
     def __init__(self, auto=False, display=False, speak=False):
         self.auto = auto
@@ -212,9 +212,9 @@ class CNNNavigator:
         h = msg.height
         w = msg.width
         s = 4  # TODO: force expected size instead
-
+        
         if self.display and self.iw is None:
-            self.iw = ImageWindow(w/s, h/s)
+            self.iw = ImageWindow(w, h)
             self._count = 0
 
         rospy.loginfo('{}: Got {} x {} image'.format(self._count, w, h))
@@ -224,7 +224,7 @@ class CNNNavigator:
         resized = image.resize((w/s, h/s), resample=PILImage.LANCZOS)
 
         if self.display:
-            self.iw.show_image(resized).update()
+            self.iw.show_image(image).update()
 
         hsv = resized.convert('HSV')
         return np.fromstring(hsv.tobytes(), dtype='byte').reshape((h/s, w/s, 3))
