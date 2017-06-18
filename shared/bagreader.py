@@ -6,7 +6,7 @@ from PIL import Image
 from io import BytesIO
 
 sys.path.append(os.path.abspath('../..'))  # Not clean
-from annotate.base import AnnotateBase
+from annotate_base import AnnotateBase
 
 class BagReader(AnnotateBase):
     def __init__(self):
