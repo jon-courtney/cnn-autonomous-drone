@@ -268,9 +268,11 @@ class CNNModel():
 def get_args():
     parser = argparse.ArgumentParser(description='Build or test convolutional neural network.', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('--train', nargs=2, metavar=('trainfile', 'testfile'), help='train and test the model')
+    group.add_argument('--train', metavar='trainfile', help='train the model')
     group.add_argument('--test', metavar='testfile', help='test the model')
-    group.add_argument('--resume', nargs=2, metavar=('trainfile', 'testfile'), help='reload model and resume training')
+    group.add_argument('--train_and_test', nargs=2, metavar=('trainfile', 'testfile'), help='train and test the model')
+    group.add_argument('--resume', metavar='trainfile', help='reload model and resume training')
+    group.add_argument('--resume_and_test', nargs=2, metavar=('trainfile', 'testfile'), help='reload model, resume training, then test')
     parser.add_argument('--model', default='model.hdf5', metavar='modelfile', help='model file to save or load')
     parser.add_argument('--epochs', type=int, default=1, metavar='E', help='Number of epochs to train')
     group = parser.add_mutually_exclusive_group()
@@ -290,7 +292,15 @@ if __name__ == '__main__':
                      verbose=verbose)
 
     if args.train:
-        trainfile, testfile = args.train
+        trainfile = args.train
+        model.load_data(trainfile, type='train')
+        model.build()
+        if verbose:
+            model.print_summary()
+        model.fit()
+        model.save_model(args.model)
+    elif args.train_and_test:
+        trainfile, testfile = args.train_and_test
         model.load_data(trainfile, type='train')
         model.load_data(testfile, type='test')
         model.build()
@@ -305,7 +315,15 @@ if __name__ == '__main__':
         model.load_model(args.model)
         model.test()
     elif args.resume:
-        trainfile, testfile = args.resume
+        trainfile = args.resume
+        model.load_data(trainfile, type='train')
+        model.load_model(args.model)
+        if verbose:
+            model.print_summary()
+        model.fit()
+        model.save_model(args.model)
+    elif args.resume_and_test:
+        trainfile, testfile = args.resume_and_test
         model.load_data(trainfile, type='train')
         model.load_data(testfile, type='test')
         model.load_model(args.model)
