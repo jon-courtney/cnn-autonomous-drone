@@ -9,6 +9,8 @@ except ImportError:
 # http://code.activestate.com/recipes/521918-pil-and-tkinter-to-display-images/
 # https://stackoverflow.com/questions/19895877/tkinter-cant-bind-arrow-key-events
 
+# TODO: Catch and signal window close
+
 class ImageWindow:
     def __init__(self, width, height, root=None):
         if root==None:
