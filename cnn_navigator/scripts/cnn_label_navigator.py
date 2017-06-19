@@ -6,11 +6,9 @@ from sensor_msgs.msg import Image
 from geometry_msgs.msg import Twist
 
 import numpy as np
-from PIL import Image as PILImage
-import math
+import sys, os
 
-import sys, os, pdb
-
+# Import superclass and helper classes
 sys.path.append(os.path.abspath('../..'))
 from cnn_navigator import CNNNavigator
 from shared.action import Action
@@ -20,7 +18,6 @@ from shared.speaker import Speaker
 ns = '/bebop/'
 
 class CNNLabelNavigator(CNNNavigator):
-
     def __init__(self, auto=False, display=False, speak=False):
         super(CNNLabelNavigator, self).__init__(auto=auto, display=display, speak=speak)
         self.total = 0
