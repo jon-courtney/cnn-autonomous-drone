@@ -322,6 +322,7 @@ def get_args():
     parser.add_argument('--validate', metavar='<valfile>', help='data for validation')
     parser.add_argument('--model', default='model.hdf5', metavar='<modelfile>', help='model file to save or load')
     parser.add_argument('--epochs', type=int, default=10, metavar='E', help='Number of epochs to train')
+    parser.add_argument('--batch_size', type=int, default=50, metavar='B', help='Mini-batch size')
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--verbose', default=True, action='store_true', help='make chatty')
     group.add_argument('--quiet', default=False, action='store_true', help='make quiet')
