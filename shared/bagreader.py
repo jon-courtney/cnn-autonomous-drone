@@ -9,7 +9,7 @@ sys.path.append(os.path.abspath('../..'))  # Not clean
 from annotate_base import AnnotateBase
 
 class BagReader(AnnotateBase):
-    def __init__(self, num_actions=4, newtopic=True):
+    def __init__(self, num_actions=2, newtopic=True):
         super(BagReader, self).__init__(num_actions=num_actions)
         if newtopic:
             self.topic = 'bebop_image_raw_compressed_throttle'
