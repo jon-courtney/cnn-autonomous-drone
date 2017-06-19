@@ -72,9 +72,9 @@ class CNNNavigator(object):
     def __init__(self, auto=False, display=False, speak=False):
         self.auto = auto
         self.display = display
+        self.speak = speak
         self.iw = None
         self._count = 0
-        self.speak = speak
 
         if speak:
             self.speaker = Speaker()
@@ -182,6 +182,7 @@ class CNNNavigator(object):
                 if self.speak:
                     self.speaker.speak(command)
         except KeyboardInterrupt:
+            # It seems difficult to interrupt the loop when display=True
             rospy.loginfo('End passive classification')
             self.cleanup()
 
@@ -212,22 +213,29 @@ class CNNNavigator(object):
         h = msg.height
         w = msg.width
         s = 4  # TODO: force expected size instead
-        
+
         if self.display and self.iw is None:
-            self.iw = ImageWindow(w, h)
+            self.iw = ImageWindow(w/2, h/2)
             self._count = 0
 
         rospy.loginfo('{}: Got {} x {} image'.format(self._count, w, h))
         self._count += 1
 
-        image = PILImage.frombytes('RGB', (w, h), msg.data)
+        # Crop out the middle of the image
+        # TODO: Tighten up the math for the processing loop
+        image = PILImage.frombytes('RGB', (w, h), msg.data)\
+                        .crop((w/s, h/s, (s-1)*w/s, (s-1)*h/s))
         resized = image.resize((w/s, h/s), resample=PILImage.LANCZOS)
 
         if self.display:
             self.iw.show_image(image).update()
 
+        # Convert to HSV color space
         hsv = resized.convert('HSV')
-        return np.fromstring(hsv.tobytes(), dtype='byte').reshape((h/s, w/s, 3))
+
+        # Return properly-shaped raw data
+        return np.fromstring(hsv.tobytes(), dtype='byte')\
+                 .reshape((h/s, w/s, 3))
 
     # TODO: Other functions here?
     def cleanup(self):
