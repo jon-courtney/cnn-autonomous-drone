@@ -1,7 +1,6 @@
 #!/usr/bin/env python2
 #
 from __future__ import print_function
-from PIL import Image, ImageDraw
 from io import BytesIO
 import numpy as np
 import argparse, sys, os, pdb
@@ -48,12 +47,6 @@ class Annotator(AnnotateBase):
                          .crop((w/s, h/s, (s-1)*w/s, (s-1)*h/s))
             resized = image.resize((w/s, h/s), resample=Image.LANCZOS)
             hsv = resized.convert('HSV')
-
-            # draw = ImageDraw.Draw(image)
-            # draw.line([(w/s, 0), (w/s, h)])
-            # draw.line([((s-1)*w/s, 0), ((s-1)*w/s, h)])
-            # # draw.line([(0, h/s), (w, h/s)])
-            # # draw.line([(0, (s-1)*h/s), (w, (s-1)*h/s)])
 
             iw.show_image(image)
             iw.force_focus()
