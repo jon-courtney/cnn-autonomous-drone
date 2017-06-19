@@ -1,29 +1,24 @@
 #!/usr/bin/env python
 #
 import rospy
-from std_msgs.msg import String, Empty
+from std_msgs.msg import String
 from sensor_msgs.msg import Image
-from geometry_msgs.msg import Twist
 
 import numpy as np
+import sys, os
 
-from PIL import Image as PILImage
-
-from io import BytesIO
-import sys, os, pdb
-
+# Import superclass and helper classes
 from camera_simulator import CameraSimulator
-sys.path.append(os.path.abspath('../..'))  # Not clean
+sys.path.append(os.path.abspath('../..'))
 from shared.imagewindow import ImageWindow
 from shared.bagreader import BagReader
 from shared.action import Action
 
 ns = '/bebop/'
 
-
 class LabeledCameraSimulator(CameraSimulator):
-    def __init__(self, display=False):
-        super(LabeledCameraSimulator, self).__init__(display=display)
+    def __init__(self, display=False, newtopic=True):
+        super(LabeledCameraSimulator, self).__init__(display=display, newtopic=newtopic)
         self.label_topic = rospy.Publisher(ns+'label', String, latch=True, queue_size=1)
         self.label_msg = String()
 
@@ -45,18 +40,23 @@ class LabeledCameraSimulator(CameraSimulator):
     def log_labeled_image(self, img, label):
         rospy.loginfo('{}: {} x {} ({})'.format(self.frame, img.width, img.height, label))
 
+    # Similar to the superclass simulate method, but adds a label topic
     def simulate(self, bagfile, npzfile):
+        # Load jpeg-encoded images from rosbag file
         self._load_bag_data(bagfile)
+        # Load label data
         npz = np.load(npzfile)
         labels = self.labels = npz['labels']
 
         # This logic belongs elsewhere
+        # Initialize display window
         if self.display:
             self.iw = ImageWindow(self.width, self.height)
 
-        # Initialize
+        # Initialize ROS node
         rospy.init_node('labeled_camera_simulator')
 
+        # Begin 4 Hz loop
         rate = rospy.Rate(4)
         while not rospy.is_shutdown():
             img_msg, label_msg = self.make_labeled_image_msgs(self.next_labeled_image())
@@ -70,7 +70,7 @@ class LabeledCameraSimulator(CameraSimulator):
 if __name__ == '__main__':
     bagfile = 'test.bag'
     npzfile = 'test.npz'
-    drone = LabeledCameraSimulator()
+    drone = LabeledCameraSimulator(newtopic=False)
     try:
         drone.simulate(bagfile, npzfile)
     except rospy.ROSInterruptException:

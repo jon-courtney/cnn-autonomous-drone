@@ -62,6 +62,7 @@ class CameraSimulator(BagReader):
         # Initialize ROS node
         rospy.init_node('camera_simulator')
 
+        # Begin 4 Hz loop
         rate = rospy.Rate(4)
         while not rospy.is_shutdown():
             img_msg = self.make_image_msg(self.next_image())
