@@ -165,16 +165,15 @@ class CNNNavigator(object):
 
                 c = np.argmax(preds)
                 p = preds[c]
+                command = Action.name(c)
 
                 if p < 0.5:
-                    command = Action.name(c)
                     rospy.loginfo('UNCERTAIN {} (p={:4.2f})'.format(command, p))
                     if self.speak:
                         self.speaker.speak('UNKNOWN')
                     c = Action.SCAN
                     p = 0.0
-
-                command = Action.name(c)
+                    command = Action.name(c)
 
                 rospy.loginfo('Command {} (p={:4.2f})'.format(command, p))
                 rospy.loginfo('-----')
