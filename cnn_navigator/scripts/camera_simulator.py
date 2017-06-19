@@ -3,6 +3,7 @@
 import rospy
 from sensor_msgs.msg import Image
 from PIL import Image as PILImage
+from PIL import ImageDraw as PILImageDraw
 from io import BytesIO
 import sys, os
 
@@ -31,8 +32,15 @@ class CameraSimulator(BagReader):
         image = PILImage.open(BytesIO(self.image_data[i]))
 
         # This logic should probably reside elsewhere
+        # Turn off display when in the processing loop
         if self.display:
-            self.iw.show_image(image).update()
+            w = self.width
+            h = self.height
+            s = self.scale
+            display_image = image.copy()
+            draw = PILImageDraw.Draw(display_image)
+            draw.rectangle([(w/s, h/s), ((s-1)*w/s, (s-1)*h/s)])
+            self.iw.show_image(display_image).update()
 
         self.frame += 1
 

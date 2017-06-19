@@ -48,6 +48,10 @@ class LabeledCameraSimulator(CameraSimulator):
         npz = np.load(npzfile)
         labels = self.labels = npz['labels']
 
+        # Double check that our label and bag image counts match
+        # This isn't true for "cropped" bag files
+        assert self.labels.shape[0] == self.image_data.shape[0]
+
         # This logic belongs elsewhere
         # Initialize display window
         if self.display:
@@ -70,7 +74,7 @@ class LabeledCameraSimulator(CameraSimulator):
 if __name__ == '__main__':
     bagfile = 'test.bag'
     npzfile = 'test.npz'
-    drone = LabeledCameraSimulator(newtopic=False)
+    drone = LabeledCameraSimulator(display=True, newtopic=False)
     try:
         drone.simulate(bagfile, npzfile)
     except rospy.ROSInterruptException:
