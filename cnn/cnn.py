@@ -19,7 +19,7 @@ from shared.action import Action
 
 class CNNModel():
 
-    def __init__(self, num_epoch=5, num_hidden=1, batch_size=50, num_filters=24, kernel_size=5, kernel_initializer='glorot_uniform', verbose=True):
+    def __init__(self, num_epoch=5, num_hidden=1, batch_size=50, num_filters=12, kernel_size=5, kernel_initializer='glorot_uniform', verbose=True):
 
         self.num_epoch          = num_epoch
         self.num_hidden         = num_hidden
@@ -28,7 +28,7 @@ class CNNModel():
         self.kernel_size        = kernel_size
         self.kernel_initializer = kernel_initializer
         self.pool_size          = (2, 2)
-        self.num_dense          = 64
+        self.num_dense          = 32
         self.verbose            = verbose
 
         # Other instance variables, for the record...
