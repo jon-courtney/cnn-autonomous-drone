@@ -31,9 +31,10 @@ class Annotator(AnnotateBase):
         s = self.scale
         c = self.chans
         size = w*h/s/s*c
-        iw = ImageWindow(w, h)
+        iw = ImageWindow(w/2, h/2)
         self.labels = np.empty(self.num_images, dtype='byte')
         self.data = np.empty((self.num_images, size), dtype='byte')
+        keep = np.ones(self.num_images)
 
         # Check that our incoming image size is as expected...
         image = Image.open(BytesIO(self.image_data[0]))
@@ -43,21 +44,25 @@ class Annotator(AnnotateBase):
 
         i = 0
         while i < self.num_images:
-            image = Image.open(BytesIO(self.image_data[i]))
+            image = Image.open(BytesIO(self.image_data[i]))\
+                         .crop((w/s, h/s, (s-1)*w/s, (s-1)*h/s))
             resized = image.resize((w/s, h/s), resample=Image.LANCZOS)
             hsv = resized.convert('HSV')
-            #hue,_,_ = hsv.split()
 
-            draw = ImageDraw.Draw(image)
-            draw.line([(w/s, 0), (w/s, h)])
-            draw.line([((s-1)*w/s, 0), ((s-1)*w/s, h)])
-            # draw.line([(0, h/s), (w, h/s)])
-            # draw.line([(0, (s-1)*h/s), (w, (s-1)*h/s)])
+            # draw = ImageDraw.Draw(image)
+            # draw.line([(w/s, 0), (w/s, h)])
+            # draw.line([((s-1)*w/s, 0), ((s-1)*w/s, h)])
+            # # draw.line([(0, h/s), (w, h/s)])
+            # # draw.line([(0, (s-1)*h/s), (w, (s-1)*h/s)])
 
             iw.show_image(image)
             iw.force_focus()
 
-            print('Image {} / {}:'.format(i, self.num_images), end='')
+            if keep[i]==1:
+                print('Image {} / {}: '.format(i, self.num_images), end='')
+            else:
+                print('Image {} / {} (KILLED): '.format(i, self.num_images), end='')
+            sys.stdout.flush()
 
             iw.wait()
 
@@ -71,13 +76,23 @@ class Annotator(AnnotateBase):
                     i -= 1
                 print('(BACK)')
                 continue
+            elif key=='k':
+                print('(KILLED)')
+                keep[i] = 0
+                label = Action.SCAN
+            elif key=='r':
+                print('(RESTORED)')
+                keep[i] = 1
+                if i > 0:
+                    i -= 1
+                continue
             elif key=='space':
                 label = Action.SCAN
             elif key=='Return':
                 label = Action.TARGET
-            elif key=='Left':
+            elif self.num_actions > 2 and key=='Left':
                 label = Action.TARGET_LEFT
-            elif key=='Right':
+            elif self.num_actions > 2 and key=='Right':
                 label = Action.TARGET_RIGHT
             elif self.num_actions > 4 and key=='Up':
                 label = Action.TARGET_UP
@@ -93,6 +108,11 @@ class Annotator(AnnotateBase):
 
         iw.close()
         self.num_annotated = i
+        self.labels = self.labels[:i]
+        self.data = self.data[:i]
+        self.labels = self.labels[keep[:i]==1]
+        self.data = self.data[keep[:i]==1]
+        self.num_annotated = len(self.labels)
 
 
     def save(self, outfile):
