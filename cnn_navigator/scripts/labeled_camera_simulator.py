@@ -74,7 +74,7 @@ class LabeledCameraSimulator(CameraSimulator):
 if __name__ == '__main__':
     bagfile = 'test.bag'
     npzfile = 'test.npz'
-    drone = LabeledCameraSimulator(display=True, newtopic=False)
+    drone = LabeledCameraSimulator(display=False, newtopic=False)
     try:
         drone.simulate(bagfile, npzfile)
     except rospy.ROSInterruptException:

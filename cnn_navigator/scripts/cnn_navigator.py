@@ -8,6 +8,7 @@ from geometry_msgs.msg import Twist
 import numpy as np
 from PIL import Image as PILImage
 import math
+import time
 
 import sys, os, pdb
 
@@ -63,18 +64,22 @@ class Command:
         else:
             pub.publish()
 
-
 # TODO: Inherit from non-CNN navigator
 # TODO: Add up() and down() methods
 
 class CNNNavigator(object):
 
-    def __init__(self, auto=False, display=False, speak=False):
+    def __init__(self, auto=False, display=False, speak=False, verbose=False):
         self.auto = auto
         self.display = display
         self.speak = speak
         self.iw = None
         self._count = 0
+        self.caution = True
+        self.forward = False
+        self.forward_time = 0
+        self.forward_margin = 2.0
+        self.verbose = verbose
 
         if speak:
             self.speaker = Speaker()
@@ -89,10 +94,10 @@ class CNNNavigator(object):
 
         if self.auto:
             # Load CNN
-            rospy.loginfo('Loading CNN model...')
+            self.loginfo('Loading CNN model...')
             self.cnn = CNNModel(verbose=False)
             self.cnn.load_model()
-            rospy.loginfo('CNN model loaded.')
+            self.loginfo('CNN model loaded.')
         else:
             self.cnn = None
 
@@ -100,38 +105,89 @@ class CNNNavigator(object):
 
 
     def takeoff(self):
-        rospy.loginfo('takeoff')
+        self.logwarn('takeoff')
         self.command.do('takeoff')
         self.flying = True
-        rospy.loginfo('Waiting 10 seconds...')
+        self.loginfo('Waiting 10 seconds...')
         rospy.sleep(10)  # Would be better to get callback when ready...
 
 
     def land(self):
-        rospy.loginfo('land')
+        self.loginfo('land')
         self.command.do('land')
         self.flying = False
 
     def flattrim(self):
-        rospy.loginfo('flat trim')
+        self.loginfo('flat trim')
         self.command.do('flattrim')
+
+    def apply_caution(self, nav):
+        if not self.caution:
+            return nav
+
+        if nav == 'forward':
+            curr_time = time.time()
+            if self.forward:
+                if curr_time > self.forward_time + self.forward_margin:
+                    # Apply the brakes
+                    self.forward = False
+                    nav = 'stop'
+                    self.forward_time = curr_time
+                    self.logwarn('Safety stop!')
+            else:
+                if curr_time > self.forward_time + self.forward_margin/2:
+                    # ok, you can start again
+                    self.forward = True
+                    self.forward_time = curr_time
+                else:
+                    # still in time out
+                    self.loginfo('In time out')
+                    nav = 'stop'
+
+        return nav
 
     def move(self, nav):
         assert nav in ['left', 'right', 'forward', 'stop']
         assert self.flying
-        rospy.loginfo(nav)
+
+        nav = self.apply_caution(nav)
         self.command.do('move', nav)
+        self.loginfo(nav)
 
 
     def stop(self):
         self.move('stop')
 
 
+    def loginfo(self, message):
+        if self.verbose:
+            rospy.loginfo(message)
+
+    def logwarn(self, message):
+        rospy.loginfo(message)  # There might be another method for this
+
+    def handle_uncertainty(self, c, p):
+
+        if c == Action.SCAN and p < 0.5:
+            command = Action.name(c)
+            self.logwarn('UNCERTAIN {} (p={:4.2f})'.format(command, p))
+            if self.speak:
+                self.speaker.speak('UNKNOWN')
+            c = Action.TARGET_LEFT
+        elif c == Action.TARGET and p < 0.6:
+            command = Action.name(c)
+            self.logwarn('UNCERTAIN {} (p={:4.2f})'.format(command, p))
+            if self.speak:
+                self.speaker.speak('UNKNOWN')
+            c = Action.TARGET_LEFT
+
+        return c
+
     def navigate(self):
         assert self.auto
         assert self.flying
 
-        rospy.loginfo('Begin autonomous navigation')
+        self.loginfo('Begin autonomous navigation')
         try:
             while True:
                 img = self.get_image()
@@ -140,23 +196,17 @@ class CNNNavigator(object):
                 c = np.argmax(preds)
                 p = preds[c]
 
-                if p < 0.5:
-                    command = Action.name(c)
-                    rospy.loginfo('UNCERTAIN {} (p={:4.2f})'.format(command, p))
-                    if self.speak:
-                        self.speaker.speak('UNKNOWN')
-                    c = Action.SCAN
-                    p = 0.0
+                c = self.handle_uncertainty(c, p)
 
                 self.give_command(c)
         except KeyboardInterrupt:
-            rospy.loginfo('End autonomous navigation')
+            self.loginfo('End autonomous navigation')
             self.cleanup()
 
     def watch(self):
         assert self.auto
 
-        rospy.loginfo('Begin passive classification')
+        self.loginfo('Begin passive classification')
         try:
             while True:
                 img = self.get_image()
@@ -168,43 +218,43 @@ class CNNNavigator(object):
                 command = Action.name(c)
 
                 if p < 0.5:
-                    rospy.loginfo('UNCERTAIN {} (p={:4.2f})'.format(command, p))
+                    self.logwarn('UNCERTAIN {} (p={:4.2f})'.format(command, p))
                     if self.speak:
                         self.speaker.speak('UNKNOWN')
                     c = Action.SCAN
                     p = 0.0
                     command = Action.name(c)
 
-                rospy.loginfo('Command {} (p={:4.2f})'.format(command, p))
-                rospy.loginfo('-----')
+                self.loginfo('Command {} (p={:4.2f})'.format(command, p))
+                self.loginfo('-----')
 
                 if self.speak:
                     self.speaker.speak(command)
         except KeyboardInterrupt:
             # It seems difficult to interrupt the loop when display=True
-            rospy.loginfo('End passive classification')
+            self.loginfo('End passive classification')
             self.cleanup()
 
 
     def give_command(self, act):
         command = Action.name(act)
-        rospy.loginfo('Command {}'.format(command))
+        self.loginfo('Command {}'.format(command))
 
         if self.speak:
             self.speaker.speak(command)
 
-        if act == Action.SCAN or Action.TARGET_RIGHT:
+        if act in [Action.SCAN, Action.TARGET_RIGHT]:
             nav = 'right'
         elif act == Action.TARGET_LEFT:
             nav = 'left'
         elif act == Action.TARGET:
             nav = 'forward'
         else:
-            rospy.loginfo('Stop')
+            self.loginfo('Stop')
             nav = 'stop'
 
         self.move(nav)
-        rospy.loginfo('-----')
+        self.loginfo('-----')
 
 
     def get_image(self):
@@ -217,7 +267,7 @@ class CNNNavigator(object):
             self.iw = ImageWindow(w/2, h/2)
             self._count = 0
 
-        rospy.loginfo('{}: Got {} x {} image'.format(self._count, w, h))
+        self.loginfo('{}: Got {} x {} image'.format(self._count, w, h))
         self._count += 1
 
         # Crop out the middle of the image
@@ -257,15 +307,17 @@ class CNNNavigator(object):
 
 if __name__ == '__main__':
     try:
-        nav = CNNNavigator(auto=True, display=True, speak=True)
-        nav.watch()
-        nav.shutdown()
-
-        # nav = CNNNavigator(auto=True)
-        # nav.flattrim()
-        # nav.takeoff()
-        # nav.navigate()
-        # nav.land()
+        # Just watching...
+        # nav = CNNNavigator(auto=True, display=True, speak=False)
+        # nav.watch()
         # nav.shutdown()
+
+        # Yes, really flying
+        nav = CNNNavigator(auto=True, verbose=False)
+        nav.flattrim()
+        nav.takeoff()
+        nav.navigate()
+        nav.land()
+        nav.shutdown()
     except rospy.ROSInterruptException:
         nav.shutdown()
