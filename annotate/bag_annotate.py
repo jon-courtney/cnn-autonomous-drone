@@ -13,8 +13,9 @@ from shared.bagreader import BagReader
 
 
 class BagAnnotator(Annotator, BagReader):
-    def __init__(self, num_actions=4):
+    def __init__(self, num_actions=4, newtopic=True):
         super(BagAnnotator, self).__init__(num_actions=num_actions)
+        BagReader().__init__(self, newtopic=newtopic)
 
     def annotate(self, file):
         self._load_bag_data(file)
@@ -223,6 +224,7 @@ def get_args():
     parser.add_argument('--convert', metavar='<npzfile_in>', help='npz file to convert')
     parser.add_argument('--reannotate', metavar='<npzfile_in>', help='npz file to reannotate')
     parser.add_argument('--mode', default='RGB', choices=['RGB', 'HSV', 'YCrCb'], help='Image format to which to convert')
+    parser.add_argument('--oldtopic', default=False, action='store_true', help='if set, forces use of /bebop/image_raw_throttle/compressed topic')
 
     return parser.parse_args()
 
@@ -230,7 +232,7 @@ def get_args():
 if __name__ == '__main__':
     args = get_args()
 
-    a = BagAnnotator(num_actions=2)
+    a = BagAnnotator(num_actions=2, newtopic=not args.oldtopic)
 
     if args.convert:
         a.convert(args.infile, args.outfile, args.convert, args.mode)

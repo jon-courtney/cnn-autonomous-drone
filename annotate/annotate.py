@@ -9,6 +9,7 @@ import argparse, sys, os, pdb
 sys.path.append(os.path.abspath('..'))
 from shared.action import Action
 from shared.imagewindow import ImageWindow
+from shared.annotate_base import AnnotateBase
 
 
 class Annotator(AnnotateBase):
