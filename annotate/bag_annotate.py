@@ -9,22 +9,15 @@ import argparse, sys, os, pdb
 sys.path.append(os.path.abspath('..'))
 from shared.action import Action
 from shared.imagewindow import ImageWindow
+from shared.bagreader import BagReader
 
 
-class Annotator(AnnotateBase):
+class BagAnnotator(Annotator, BagReader):
     def __init__(self, num_actions=4):
-        super(Annotator, self).__init__(num_actions=num_actions)
-
-    def _load_data(self, file):
-        npz = np.load(file)
-        self.image_data = npz['image_data']
-        self.num_images = self.image_data.size
-        (self.width, self.height) = Image.open(BytesIO(self.image_data[0])).size
-
-        assert self.width==856 and self.height==480, "Unexpected image dimensions (%d, %d)" % (self.width, self.height)
+        super(BagAnnotator, self).__init__(num_actions=num_actions)
 
     def annotate(self, file):
-        self._load_data(file)
+        self._load_bag_data(file)
         w = self.width
         h = self.height
         s = self.scale
@@ -100,7 +93,7 @@ class Annotator(AnnotateBase):
 
 
     def reannotate(self, bagfile, npzfile_in):
-        # self._load_bag_data(bagfile) # self.num_images set here
+        self._load_bag_data(bagfile) # self.num_images set here
         w = self.width
         h = self.height
         s = self.scale
@@ -190,11 +183,46 @@ class Annotator(AnnotateBase):
         iw.close()
         self.num_annotated = i
 
+
+    def convert(self, bagfile, npzfile_in, npzfile_out, mode):
+        self._load_bag_data(bagfile) # self.num_images set here
+        w = self.width
+        h = self.height
+        s = self.scale
+        c = self.chans
+        size = w*h/s/s*c
+
+        assert mode in ['RGB', 'HSV', 'YCrCb']
+
+        npz = np.load(npzfile_in)
+        labels = self.labels = npz['labels']
+        n = self.num_annotated = labels.shape[0]
+
+        assert self.num_images == self.num_annotated
+
+        data = self.data = np.empty((self.num_images, size), dtype='byte')
+
+        for i in range(n):
+            image = Image.open(BytesIO(self.image_data[i]))
+            assert image.mode == 'RGB'
+            resized = image.resize((w/s, h/s), resample=Image.LANCZOS)
+            if mode=='RGB':
+                new_img = resized
+            else:
+                new_img = resized.convert(mode)
+            data[i] = np.fromstring(new_img.tobytes(), dtype='byte')
+            print('{} : {}'.format(i, n))
+
+        np.savez(npzfile_out, data=data, labels=labels)
+
+
 def get_args():
     parser = argparse.ArgumentParser(description='Annotate drone flight images with action commands for supervised learning. NOTE: Python 2 required.', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('infile', metavar='<npzfile_in>', help='npz file with image data to analyze')
+    parser.add_argument('infile', metavar='<bagfile_in>', help='bagfile to analyze')
     parser.add_argument('outfile', metavar='<npzfile_out>', help='npz file for writing results')
+    parser.add_argument('--convert', metavar='<npzfile_in>', help='npz file to convert')
     parser.add_argument('--reannotate', metavar='<npzfile_in>', help='npz file to reannotate')
+    parser.add_argument('--mode', default='RGB', choices=['RGB', 'HSV', 'YCrCb'], help='Image format to which to convert')
 
     return parser.parse_args()
 
@@ -202,7 +230,7 @@ def get_args():
 if __name__ == '__main__':
     args = get_args()
 
-    a = Annotator(num_actions=2)
+    a = BagAnnotator(num_actions=2)
 
     if args.convert:
         a.convert(args.infile, args.outfile, args.convert, args.mode)

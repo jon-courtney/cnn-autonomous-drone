@@ -2,6 +2,7 @@
 
 class AnnotateBase(object):
     def __init__(self, num_actions=4):
+        super(AnnotateBase, self).__init__()
         self.image_data = None
         self.num_images = 0
         self.width = 0
