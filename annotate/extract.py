@@ -10,13 +10,13 @@ from shared.bagreader import BagReader
 
 class Extractor(BagReader):
     def __init__(self):
-        super(Annotator, self).__init__()
+        super(Extractor, self).__init__()
 
     def extract(self, file):
         self._load_bag_data(file) # self.num_images set here
 
     def save(self, outfile):
-        np.savez(outfile, img_data=self.image_data)
+        np.savez(outfile, image_data=self.image_data)
 
 
 def get_args():
