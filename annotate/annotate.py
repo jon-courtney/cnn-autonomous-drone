@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 #
 from __future__ import print_function
 from PIL import Image, ImageDraw
@@ -205,9 +205,7 @@ if __name__ == '__main__':
 
     a = Annotator(num_actions=2)
 
-    if args.convert:
-        a.convert(args.infile, args.outfile, args.convert, args.mode)
-    elif args.reannotate:
+    if args.reannotate:
         a.reannotate(args.infile, args.reannotate)
         a.save(args.outfile)
     else:
