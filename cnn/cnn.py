@@ -337,7 +337,8 @@ if __name__ == '__main__':
 
     model = CNNModel(num_epoch=args.epochs,
                      num_hidden=args.hidden,
-                     verbose=verbose)
+                     verbose=verbose,
+                     batch_size=args.batch_size)
 
     if args.train:
         trainfile = args.train
