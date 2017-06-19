@@ -1,17 +1,13 @@
 #!/usr/bin/env python
 #
 import rospy
-from std_msgs.msg import String, Empty
 from sensor_msgs.msg import Image
-from geometry_msgs.msg import Twist
-
-import numpy as np
-
 from PIL import Image as PILImage
-
 from io import BytesIO
-import sys, os, pdb
-sys.path.append(os.path.abspath('../..'))  # Not clean
+import sys, os
+
+# Import helper classes
+sys.path.append(os.path.abspath('../..'))
 from shared.imagewindow import ImageWindow
 from shared.bagreader import BagReader
 
@@ -19,8 +15,9 @@ ns = '/bebop/'
 
 
 class CameraSimulator(BagReader):
-    def __init__(self, display=False):
-        super(CameraSimulator, self).__init__()
+    def __init__(self, display=False, newtopic=True):
+        # BagReader defaults assume num_actions=2 and newtopic=True
+        super(CameraSimulator, self).__init__(newtopic=newtopic)
         self.frame = 0
         self.msg = Image()
         self.camera = rospy.Publisher(ns+'image_raw', Image, latch=True, queue_size=1)
@@ -30,6 +27,7 @@ class CameraSimulator(BagReader):
 
     def next_image(self):
         i = self.frame % self.num_images
+        # Decode jpeg from previously-loaded bag data
         image = PILImage.open(BytesIO(self.image_data[i]))
 
         # This logic should probably reside elsewhere
@@ -37,8 +35,9 @@ class CameraSimulator(BagReader):
             self.iw.show_image(image).update()
 
         self.frame += 1
-        return image.tobytes()
 
+        # Return the decoded raw data
+        return image.tobytes()
 
     def make_image_msg(self, data):
         self.msg.height = self.height
@@ -52,13 +51,15 @@ class CameraSimulator(BagReader):
         rospy.loginfo('{}: {} x {} ({})'.format(self.frame, img.width, img.height, img.encoding))
 
     def simulate(self, file):
+        # Load jpeg-encoded images from rosbag file
         self._load_bag_data(file)
 
         # This logic belongs elsewhere
+        # Initialize display window
         if self.display:
             self.iw = ImageWindow(self.width, self.height)
 
-        # Initialize
+        # Initialize ROS node
         rospy.init_node('camera_simulator')
 
         rate = rospy.Rate(4)
@@ -70,8 +71,8 @@ class CameraSimulator(BagReader):
 
 # TODO: Add argparse support?
 if __name__ == '__main__':
-    bagfile = 'test.bag'
-    drone = CameraSimulator()
+    bagfile = 'test.bag' # Careful about what topics are used
+    drone = CameraSimulator(display=False, newtopic=False)
     try:
         drone.simulate(bagfile)
     except rospy.ROSInterruptException:
