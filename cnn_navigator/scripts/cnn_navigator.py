@@ -282,6 +282,9 @@ class CNNNavigator(object):
         msg = rospy.client.wait_for_message(ns+'image_raw', Image)
         h = msg.height
         w = msg.width
+        # Should probably raise a ROS exception of some sort here
+        if (w, h) != (856, 480):
+            self.logwarn('WARNING: Unexpected image size: {} x {}'.format(w, h))
         s = 4  # TODO: force expected size instead
 
         if self.display and self.iw is None:
