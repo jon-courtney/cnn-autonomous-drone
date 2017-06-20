@@ -19,7 +19,7 @@ from shared.action import Action
 
 class CNNModel():
 
-    def __init__(self, num_epoch=5, num_hidden=1, batch_size=50, num_filters=12, kernel_size=5, kernel_initializer='glorot_uniform', verbose=True):
+    def __init__(self, num_epoch=5, num_hidden=1, batch_size=50, num_filters=12, kernel_size=10, kernel_initializer='glorot_uniform', verbose=True):
 
         self.num_epoch          = num_epoch
         self.num_hidden         = num_hidden
@@ -199,20 +199,22 @@ class CNNModel():
         self.model.add(Conv2D(self.num_filters, self.kernel_size,
                          input_shape=self.input_shape,
                          kernel_initializer=self.kernel_initializer)) #1st conv. layer
-        self.model.add(Activation('relu')) # Activation specification necessary for Conv2D and Dense layers
+        self.model.add(Activation('relu'))
+        self.model.add(MaxPooling2D(pool_size=self.pool_size))
 
         self.model.add(Conv2D(self.num_filters, self.kernel_size,
             kernel_initializer=self.kernel_initializer)) #2nd conv. layer
         self.model.add(Activation('relu'))
+        self.model.add(MaxPooling2D(pool_size=self.pool_size))
 
         self.model.add(Conv2D(self.num_filters, self.kernel_size,
             kernel_initializer=self.kernel_initializer)) #3rd conv. layer
         self.model.add(Activation('relu'))
+        self.model.add(MaxPooling2D(pool_size=self.pool_size))
 
-        self.model.add(MaxPooling2D(pool_size=self.pool_size)) # decreases size, helps prevent overfitting
-        self.model.add(Dropout(0.5)) # zeros out some fraction of inputs, helps prevent overfitting
+        self.model.add(Dropout(0.5))
 
-        self.model.add(Flatten()) # necessary to flatten before going into conventional dense layer
+        self.model.add(Flatten())
 
         # now start a typical neural network
         self.model.add(Dense(self.num_dense,
