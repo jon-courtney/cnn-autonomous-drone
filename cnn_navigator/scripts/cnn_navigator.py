@@ -46,7 +46,13 @@ class Command:
         self.left.angular.z = math.pi/self.scale
 
         self.forward = Twist()
-        self.forward.linear.x = 2/self.scale
+        self.forward.linear.x = 1.5/self.scale
+
+        self.up = Twist()
+        self.up.linear.z = 2/self.scale
+
+        self.down = Twist()
+        self.down.linear.z = -2/self.scale
 
         self.stop = Twist()
 
@@ -54,7 +60,7 @@ class Command:
     def do(self, command, msg=None):
 
         assert command in ['takeoff', 'land', 'reset', 'flattrim', 'move']
-        assert msg in [None, 'left', 'right', 'forward', 'stop']
+        assert msg in [None, 'left', 'right', 'forward', 'stop', 'up', 'down']
 
         pub = self.__dict__[command]
 
@@ -69,13 +75,13 @@ class Command:
 
 class CNNNavigator(object):
 
-    def __init__(self, auto=False, display=False, speak=False, verbose=False):
+    def __init__(self, auto=False, display=False, speak=False, caution=False, verbose=False):
         self.auto = auto
         self.display = display
         self.speak = speak
         self.iw = None
         self._count = 0
-        self.caution = True
+        self.caution = caution
         self.forward = False
         self.forward_time = 0
         self.forward_margin = 2.0
@@ -103,17 +109,34 @@ class CNNNavigator(object):
 
         self.flying = False
 
+    def _move_up(self, secs):
+        self.loginfo('Going up...')
+        if self.speak:
+            self.speaker.speak('moving up')
+        then = rospy.Time.now()
+        d = rospy.Duration.from_sec(secs)
+        r = rospy.Rate(10)
+        while rospy.Time.now() - then < d:
+            self.command.do('move', 'up')
+            r.sleep()
+        self.loginfo('Done.')
+
 
     def takeoff(self):
         self.logwarn('takeoff')
+        if self.speak:
+            self.speaker.speak("taking off")
         self.command.do('takeoff')
         self.flying = True
         self.loginfo('Waiting 10 seconds...')
         rospy.sleep(10)  # Would be better to get callback when ready...
+        self._move_up(2.0)
 
 
     def land(self):
         self.loginfo('land')
+        if self.speak:
+            self.speaker.speak("landing")
         self.command.do('land')
         self.flying = False
 
@@ -134,6 +157,8 @@ class CNNNavigator(object):
                     nav = 'stop'
                     self.forward_time = curr_time
                     self.logwarn('Safety stop!')
+                    if self.speak:
+                        self.speaker.speak_new('safety stop')
             else:
                 if curr_time > self.forward_time + self.forward_margin/2:
                     # ok, you can start again
@@ -142,7 +167,11 @@ class CNNNavigator(object):
                 else:
                     # still in time out
                     self.loginfo('In time out')
+                    if self.speak:
+                        self.speaker.speak_new('time out')
                     nav = 'stop'
+        else:
+            self.forward = False
 
         return nav
 
@@ -167,18 +196,16 @@ class CNNNavigator(object):
         rospy.loginfo(message)  # There might be another method for this
 
     def handle_uncertainty(self, c, p):
-
+        command = Action.name(c)
         if c == Action.SCAN and p < 0.5:
-            command = Action.name(c)
             self.logwarn('UNCERTAIN {} (p={:4.2f})'.format(command, p))
             if self.speak:
-                self.speaker.speak('UNKNOWN')
+                self.speaker.speak_new('UNKNOWN')
             c = Action.TARGET_LEFT
-        elif c == Action.TARGET and p < 0.6:
-            command = Action.name(c)
+        elif c == Action.TARGET and p < 0.5:
             self.logwarn('UNCERTAIN {} (p={:4.2f})'.format(command, p))
             if self.speak:
-                self.speaker.speak('UNKNOWN')
+                self.speaker.speak_new('UNKNOWN')
             c = Action.TARGET_LEFT
 
         return c
@@ -217,19 +244,13 @@ class CNNNavigator(object):
                 p = preds[c]
                 command = Action.name(c)
 
-                if p < 0.5:
-                    self.logwarn('UNCERTAIN {} (p={:4.2f})'.format(command, p))
-                    if self.speak:
-                        self.speaker.speak('UNKNOWN')
-                    c = Action.SCAN
-                    p = 0.0
-                    command = Action.name(c)
+                c = self.handle_uncertainty(c, p)
 
                 self.loginfo('Command {} (p={:4.2f})'.format(command, p))
                 self.loginfo('-----')
 
                 if self.speak:
-                    self.speaker.speak(command)
+                    self.speaker.speak_new(command)
         except KeyboardInterrupt:
             # It seems difficult to interrupt the loop when display=True
             self.loginfo('End passive classification')
@@ -241,7 +262,7 @@ class CNNNavigator(object):
         self.loginfo('Command {}'.format(command))
 
         if self.speak:
-            self.speaker.speak(command)
+            self.speaker.speak_new(command)
 
         if act in [Action.SCAN, Action.TARGET_RIGHT]:
             nav = 'right'
@@ -313,7 +334,7 @@ if __name__ == '__main__':
         # nav.shutdown()
 
         # Yes, really flying
-        nav = CNNNavigator(auto=True, verbose=False)
+        nav = CNNNavigator(auto=True, verbose=True, speak=True, caution=False)
         nav.flattrim()
         nav.takeoff()
         nav.navigate()
