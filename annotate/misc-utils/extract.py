@@ -7,7 +7,6 @@ import argparse, sys, os, pdb
 sys.path.append(os.path.abspath('..'))
 from shared.bagreader import BagReader
 
-
 class Extractor(BagReader):
     def __init__(self, newtopic=True):
         super(Extractor, self).__init__(newtopic=newtopic)
